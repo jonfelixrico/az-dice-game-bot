@@ -2,7 +2,6 @@ const random = require('lodash.random')
 
 const PREFIX = process.env.PREFIX || '!rolldice'
 const DICE_FACE_EMOJI_ARR = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
-const QMARK = '❓'
 const DICE_COUNT = 6
 
 /**
@@ -17,39 +16,6 @@ function rollDice() {
 }
 
 /**
- * Helper to make promisified `setTimeouts`.
- * @param {Number} ms
- * @returns {Promise}
- */
-function delay(ms) {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(), ms)
-  })
-}
-
-/**
- * Generates a string composed of emojis.
- *
- * @param {Array} rolled Array of numbers, length 6. Each member in the range
- *  of 1 to 6, inclusive.
- * @param {Number} exposedIdx Up to what index in `rolled` will be exposed in the string.
- *  For example, if `rolled` is [1, 2, 3, 4, 5, 6], and `exposedIdx` is 4,
- *  indeces 0 to 4 of the array will be exposed (values 1, 2, 3, 4, 5 will be shown) and
- *  the rest (6) will be displayed as [?]. If -1/undefined was entered, then every value
- *  will be displayed as a '?'.
- */
-function generateDiceRollString(rolled, exposedIdx = -1) {
-  const emojiArr = new Array(DICE_COUNT).fill(QMARK)
-
-  for (let i = 0; i <= exposedIdx; i++) {
-    const face = rolled[i]
-    emojiArr[i] = DICE_FACE_EMOJI_ARR[face - 1]
-  }
-
-  return emojiArr.join(' ')
-}
-
-/**
  * @see generateDiceRollString
  *
  * Does the same as `generateDiceRollString`, but prepends a mention
@@ -59,11 +25,12 @@ function generateDiceRollString(rolled, exposedIdx = -1) {
  * @param {Array} rolled
  * @param {Number} exposedIndex
  */
-function generateRepsonseString(author, rolled, exposedIndex) {
-  return [
-    `${author}, you rolled...`,
-    generateDiceRollString(rolled, exposedIndex),
-  ]
+function generateRepsonseString(author, rolled) {
+  const rollAsEmojiStr = rolled
+    .map((face) => DICE_FACE_EMOJI_ARR[face - 1])
+    .join(' ')
+
+  return [`> ${rollAsEmojiStr}`, author].join('\n')
 }
 
 /**
@@ -75,14 +42,7 @@ async function commandProcessor(message) {
   const rolled = rollDice()
   const commandCaller = message.author
 
-  const reply = await message.channel.send(
-    generateRepsonseString(commandCaller, rolled, 0)
-  )
-
-  for (let exposedIdx = 0; exposedIdx < DICE_COUNT; exposedIdx++) {
-    await delay(1000)
-    await reply.edit(generateRepsonseString(commandCaller, rolled, exposedIdx))
-  }
+  await message.channel.send(generateRepsonseString(commandCaller, rolled))
 }
 
 module.exports = ({ client }) => {
