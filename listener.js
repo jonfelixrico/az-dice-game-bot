@@ -1,12 +1,12 @@
 const random = require('lodash.random')
 
-const PREFIX = process.env.PREFIX || '!dicegame'
+const PREFIX = process.env.PREFIX || '!rolldice'
 const DICE_FACE_EMOJI_ARR = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
 const QMARK = '❓'
 const DICE_COUNT = 6
 
 function rollDice() {
-  return new Array(6).fill().map(random(1, 6))
+  return new Array(6).fill().map(() => random(1, 6))
 }
 
 function delay(ms) {
@@ -18,7 +18,7 @@ function delay(ms) {
 function generateDiceRollString(rolled, exposedIdx = -1) {
   const emojiArr = new Array(DICE_COUNT).fill(QMARK)
 
-  for (let i = exposedIdx; i < DICE_COUNT; i++) {
+  for (let i = 0; i <= exposedIdx; i++) {
     const face = rolled[i]
     emojiArr[i] = DICE_FACE_EMOJI_ARR[face - 1]
   }
