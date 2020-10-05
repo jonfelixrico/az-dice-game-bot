@@ -38,7 +38,10 @@ async function commandProcessor(message) {
   const rolled = rollDice()
   const commandCaller = message.author
 
-  await message.channel.send(generateRepsonseString(commandCaller, rolled))
+  await Promise.all([
+    message.react('🎲'),
+    message.channel.send(generateRepsonseString(commandCaller, rolled)),
+  ])
 }
 
 module.exports = ({ client }) => {
