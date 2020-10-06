@@ -9,7 +9,7 @@ moment.tz.setDefault('Asia/Manila')
 const COMMAND = '!highest'
 const { diceRollToString } = require('./utils')
 
-function generateResponse(highestRoll) {
+function generateResponse(highestRoll, svc) {
   if (!highestRoll) {
     return 'There were no highest rolls recorded for this channel.'
   }
@@ -29,25 +29,27 @@ function generateResponse(highestRoll) {
     `The highest roll in <#${channelId}> was by <@${userId}> on ${formattedDt}.`,
     // awaiting evaluation utils, will display just the dice roll string for now.
     `> ${diceRollToString(rolled)}`,
+    svc.getRollLabel(rolled),
   ].join('\n')
 }
 
-async function processCommand({ message, highestRollRepo }) {
+async function processCommand({ message, highestRollRepo, rollEvalSvc }) {
   // this is as acknowledgement to the user
   await message.react('🎲')
 
   const { channel } = message
   // get the highest roll from the repository.
   const highestRoll = await highestRollRepo.getHighestRoll(channel.id)
-  const responseString = generateResponse(highestRoll)
+  const responseString = generateResponse(highestRoll, rollEvalSvc)
 
   await channel.send(responseString)
 }
 
-module.exports = ({ client, highestRollRepo }) => {
+module.exports = (injections) => {
+  const { client } = injections
   client.on('message', (message) => {
     if (message.content === COMMAND) {
-      processCommand({ message, highestRollRepo })
+      processCommand({ message, ...injections })
     }
   })
 }
