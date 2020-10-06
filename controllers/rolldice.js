@@ -45,7 +45,9 @@ async function processCommand({ message, highestRollRepo }) {
 
   const rolled = rollDice()
 
-  await highestRollRepo.saveIfHighest(channel.id, author.id, rolled)
+  // TODO fetch highest roll and compare. if higher, then save.
+  // for now, this treats every roll as the highest roll.
+  await highestRollRepo.saveHighestRoll(channel.id, author.id, rolled)
 
   await message.channel.send(generateRepsonseString(author, rolled))
 }
