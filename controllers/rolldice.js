@@ -23,13 +23,17 @@ function rollDice() {
  * @returns {String} The string to be used for the bot's response to the user's
  *  command call.
  */
-function generateRepsonseString(author, rolled) {
+function generateRepsonseString(author, rolled, rollLabel) {
   const rollAsEmojiStr = diceRollToString(rolled)
+
+  const authorStr = rollLabel
+    ? `${author} rolled ${rollLabel}!`
+    : `${author} didn't roll a prize-winning combination.`
+
   return [
+    authorStr,
     // > is the markdown for a quote line
     `> ${rollAsEmojiStr}`,
-    // author automatically gets stringified to <@{user_id_of_message_author}
-    author,
   ].join('\n')
 }
 
@@ -38,26 +42,33 @@ function generateRepsonseString(author, rolled) {
  * matches the set command prefix for the app.
  * @param {Message} message
  */
-async function processCommand({ message, highestRollRepo }) {
+async function processCommand({ message, highestRollRepo, rollEvalSvc }) {
   // react to the user's message as acknowlegedmenet that the bot recognized the command
   await message.react('🎲')
   const { author, channel } = message
 
   const rolled = rollDice()
+  const rollLabel = rollEvalSvc.getRollLabel(rolled)
 
-  // TODO fetch highest roll and compare. if higher, then save.
-  // for now, this treats every roll as the highest roll.
-  await highestRollRepo.saveHighestRoll(channel.id, author.id, rolled)
+  const highestRoll = await highestRollRepo.getHighestRoll(channel.id)
 
-  await message.channel.send(generateRepsonseString(author, rolled))
+  if (
+    rollLabel &&
+    (!highestRoll || rollEvalSvc.compareRolls(rolled, highestRoll) === 1)
+  ) {
+    await highestRollRepo.saveHighestRoll(channel.id, author.id, rolled)
+  }
+
+  await message.channel.send(generateRepsonseString(author, rolled, rollLabel))
 }
 
-module.exports = ({ client, highestRollRepo }) => {
+module.exports = (injections) => {
+  const { client } = injections
   client.on('message', (message) => {
     if (message.content !== COMMAND) {
       return
     }
 
-    processCommand({ message, highestRollRepo })
+    processCommand({ message, ...injections })
   })
 }
