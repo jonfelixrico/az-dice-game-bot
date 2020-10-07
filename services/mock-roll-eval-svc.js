@@ -72,7 +72,7 @@ const PRIZE_TIERS = createPrizeTiers();
  * @param {Array} roll        a 6-number array representing each dice result.
  * @param {Array} combination a 6-string array representing each dice result. Valid characters 
  *                              are numbers 1 - 6, "*" for wildcard, and "x" & "y" for matching numbers.
- * @returns true if the roll falls under the combination, false otherwise.
+ * @returns {Boolean} true if the roll falls under the combination, false otherwise.
  */
 function __doesRollMeetRequirement(roll, combination) {
   // combination is expecting [1-6]s then [x]s then [y]s then [*]s.
@@ -130,7 +130,7 @@ function __doesRollMeetRequirement(roll, combination) {
  * Evaluates the dice roll and returns the prize tier that it falls in.
  *
  * @param {Array} roll a 6-number array representing each dice result.
- * @returns the prize tier or null if it does not fall under any.
+ * @returns {DiceRoll} the prize tier, or null if it does not fall under any.
  */
 function __evaluateRoll(roll) {
   for (var i = 0; i < PRIZE_TIERS.length; i++) {
@@ -155,7 +155,7 @@ function __evaluateRoll(roll) {
  *
  * @param {Array} rollA a 6-number array representing each dice result.
  * @param {Array} rollB a 6-number array representing each dice result.
- * @returns the prize tier or null if it does not fall under any.
+ * @returns {Number} -1 if rollA is lesser than rollB, 0 if equal, and 1 otherwise.
  */
 function __compareChiongGuan(rollA, rollB) {
   // just add, assume that this is a valid Chiong Guan roll
