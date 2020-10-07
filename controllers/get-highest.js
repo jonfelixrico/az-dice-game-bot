@@ -20,16 +20,16 @@ function generateResponse(highestRoll, svc) {
   let formattedDt = null
 
   if (momentDt.isSame(new Date(), 'day')) {
-    formattedDt = `Today, ${momentDt.format('h:mm:s A')}`
+    formattedDt = `Today, ${momentDt.format('h:mm:ss A')}`
   } else {
-    formattedDt = momentDt.format('MMM D, YYYY h:mm:s A')
+    formattedDt = momentDt.format('MMM D, YYYY h:mm:ss A')
   }
 
   return [
     `The highest roll in <#${channelId}> was by <@${userId}> on ${formattedDt}.`,
     // awaiting evaluation utils, will display just the dice roll string for now.
     `> ${diceRollToString(rolled)}`,
-    svc.getRollLabel(rolled),
+    `**${svc.getRollLabel(rolled)}**`,
   ].join('\n')
 }
 

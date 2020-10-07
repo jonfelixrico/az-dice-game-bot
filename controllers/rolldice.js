@@ -28,9 +28,9 @@ function generateRepsonseString(author, rolled, rollLabel, isNewHighestRoll) {
   let authorStr = null
 
   if (!!rollLabel && isNewHighestRoll) {
-    authorStr = `${author} rolled _**${rollLabel}**_! **They now have the highest roll in the channel.**`
+    authorStr = `${author} rolled _**${rollLabel}!**_ They now have the highest roll in the channel.`
   } else if (!!rollLabel) {
-    authorStr = `${author} rolled _**${rollLabel}**_!`
+    authorStr = `${author} rolled _**${rollLabel}!**_`
   } else {
     authorStr = `${author} didn't roll a prize-winning combination.`
   }
