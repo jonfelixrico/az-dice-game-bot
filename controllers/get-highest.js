@@ -39,6 +39,10 @@ async function processCommand({
   rollEvalSvc,
   executorSvc,
 }) {
+  console.debug(
+    `Received ${COMMAND} from ${message.author.username} (${message.author.id}) in channel ${message.channel.name} (${message.channel.id}).`
+  )
+
   // this is as acknowledgement to the user
   await message.react('🎲')
 
