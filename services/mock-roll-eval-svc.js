@@ -1,5 +1,4 @@
 const fs = require('fs');
-const { parse } = require('path');
 
 const FILENAME = "data/prize-tier.json";
 
