@@ -15,15 +15,7 @@ function rollDice() {
   return new Array(DICE_COUNT).fill().map(() => random(1, 6))
 }
 
-/**
- * Displays the results of a user's roll as prettified strings.
- *
- * @param {User} author The record of the user who called the roll command.
- * @param {Array} rolled The results of the user's roll.
- * @returns {String} The string to be used for the bot's response to the user's
- *  command call.
- */
-function generateRepsonseString(author, rolled, rollLabel, isNewHighestRoll) {
+function generateResponseBuffer(author, rolled, rollLabel, isNewHighestRoll) {
   const rollAsEmojiStr = diceRollToString(rolled)
   let authorStr = null
 
@@ -39,7 +31,7 @@ function generateRepsonseString(author, rolled, rollLabel, isNewHighestRoll) {
     authorStr,
     // > is the markdown for a quote line
     `> ${rollAsEmojiStr}`,
-  ].join('\n')
+  ]
 }
 
 /**
@@ -52,6 +44,7 @@ async function processCommand({
   highestRollRepo,
   rollEvalSvc,
   executorSvc,
+  remarkSvc,
 }) {
   console.debug(
     `Received ${COMMAND} from ${message.author.username} (${message.author.id}) in channel ${message.channel.name} (${message.channel.id}).`
@@ -62,7 +55,7 @@ async function processCommand({
   const { author, channel } = message
 
   const rolled = rollDice()
-  const rollLabel = rollEvalSvc.getRollLabel(rolled)
+  const [rank, subRank] = rollEvalSvc.evaluate(rolled) || []
 
   try {
     await executorSvc.queueJob(async () => {
@@ -70,7 +63,7 @@ async function processCommand({
       let isNewHighestRoll = false
 
       if (
-        rollLabel &&
+        rank != null &&
         (!highestRoll ||
           rollEvalSvc.compareRolls(rolled, highestRoll.rolled) === 1)
       ) {
@@ -78,9 +71,21 @@ async function processCommand({
         isNewHighestRoll = true
       }
 
-      await message.channel.send(
-        generateRepsonseString(author, rolled, rollLabel, isNewHighestRoll)
+      const remark = remarkSvc.getRemarks(rank, subRank)
+      const strBuffer = generateResponseBuffer(
+        author,
+        rolled,
+        rollEvalSvc.getPrizeLabel(rank, subRank),
+        isNewHighestRoll
       )
+
+      if (remark.isGif) {
+        await message.channel.send(strBuffer.join('\n'), {
+          files: [remark.content],
+        })
+      } else {
+        await message.channel.send([...strBuffer, remark.content].join('\n'))
+      }
     }, channel.id)
   } catch (e) {
     console.debug(e)
