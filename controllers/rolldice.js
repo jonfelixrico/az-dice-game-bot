@@ -2,6 +2,8 @@ const random = require('lodash.random')
 const { diceRollToString } = require('./utils')
 
 const COMMAND = '!rolldice'
+const COMMAND_FORCED = '!rolldice force'
+
 const DICE_COUNT = 6
 
 /**
@@ -52,6 +54,7 @@ async function processCommand({
   highestRollRepo,
   rollEvalSvc,
   executorSvc,
+  lastRollRepo,
 }) {
   console.debug(
     `Received ${COMMAND} from ${message.author.username} (${message.author.id}) in channel ${message.channel.name} (${message.channel.id}).`
@@ -59,7 +62,9 @@ async function processCommand({
 
   // react to the user's message as acknowlegedmenet that the bot recognized the command
   await message.react('🎲')
+
   const { author, channel } = message
+  lastRollRepo.setLastRoll(author.id, channel.id)
 
   const rolled = rollDice()
   const rollLabel = rollEvalSvc.getRollLabel(rolled)
@@ -89,8 +94,29 @@ async function processCommand({
 }
 
 module.exports = (injections) => {
-  const { messageSvc } = injections
-  messageSvc.onCommand(COMMAND, (message) =>
+  const { messageSvc, lastRollRepo } = injections
+
+  messageSvc.onCommand(COMMAND, (message) => {
+    const { channel, author } = message
+
+    /*
+     * If the same user made the last roll, then we'll not allow them
+     * to roll again. A reaction will be made to tell them that their
+     * roll was prevented.
+     */
+    if (lastRollRepo.getLastRoll(channel.id) === author.id) {
+      message.react('🛑')
+      return
+    }
+
+    processCommand({ message, ...injections })
+  })
+
+  /*
+   * Even if the user is the same one who made the last roll,
+   * the force command allows them to roll either way.
+   */
+  messageSvc.onCommand(COMMAND_FORCED, (message) =>
     processCommand({ message, ...injections })
   )
 }

@@ -4,5 +4,6 @@ module.exports = async (injected) => {
     rollEvalSvc: await require('./mock-roll-eval-svc')(injected),
     executorSvc: await require('./executor-svc')(injected),
     messageSvc: await require('./message-svc')(injected),
+    lastRollRepo: await require('./simple-last-roll-repo')(injected),
   }
 }
