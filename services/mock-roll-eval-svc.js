@@ -200,7 +200,7 @@ function getRollLabel(roll) {
 function compareRolls(rollA, rollB) {
   var resultA = __evaluateRoll(rollA);
   var resultB = __evaluateRoll(rollB);
-  return __doCompareRolls(resultA.prizeTier, resultB.prizeTier);
+  return __doCompareRolls(resultA, resultB);
 }
 
 module.exports = () => {
