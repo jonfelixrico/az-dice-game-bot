@@ -23,12 +23,17 @@ function rollDice() {
  * @returns {String} The string to be used for the bot's response to the user's
  *  command call.
  */
-function generateRepsonseString(author, rolled, rollLabel) {
+function generateRepsonseString(author, rolled, rollLabel, isNewHighestRoll) {
   const rollAsEmojiStr = diceRollToString(rolled)
+  let authorStr = null
 
-  const authorStr = rollLabel
-    ? `${author} rolled ${rollLabel}!`
-    : `${author} didn't roll a prize-winning combination.`
+  if (!!rollLabel && isNewHighestRoll) {
+    authorStr = `${author} rolled _**${rollLabel}**_! **They now have the highest roll in the channel.**`
+  } else if (!!rollLabel) {
+    authorStr = `${author} rolled _**${rollLabel}**_!`
+  } else {
+    authorStr = `${author} didn't roll a prize-winning combination.`
+  }
 
   return [
     authorStr,
@@ -62,6 +67,7 @@ async function processCommand({
   try {
     await executorSvc.queueJob(async () => {
       const highestRoll = await highestRollRepo.getHighestRoll(channel.id)
+      let isNewHighestRoll = false
 
       if (
         rollLabel &&
@@ -69,10 +75,11 @@ async function processCommand({
           rollEvalSvc.compareRolls(rolled, highestRoll.rolled) === 1)
       ) {
         await highestRollRepo.saveHighestRoll(channel.id, author.id, rolled)
+        isNewHighestRoll = true
       }
 
       await message.channel.send(
-        generateRepsonseString(author, rolled, rollLabel)
+        generateRepsonseString(author, rolled, rollLabel, isNewHighestRoll)
       )
     }, channel.id)
   } catch (e) {
