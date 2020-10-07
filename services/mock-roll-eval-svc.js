@@ -75,22 +75,52 @@ const PRIZE_TIERS = createPrizeTiers();
  * @returns true if the roll falls under the combination, false otherwise.
  */
 function __doesRollMeetRequirement(roll, combination) {
+  // combination is expecting [1-6]s then [x]s then [y]s then [*]s.
+
   if (roll === null) {
       return false
   }
-  // Sort the roll dice and combinations first
-  var rollString = roll.sort().join("");
-  var combinationString = combination.sort().join("");
-  var uniqueValues = roll.filter((item, i, ar) => ar.indexOf(item) === i);
 
-  combinationString = combinationString.replace(/x/g, uniqueValues[0]);
-  if (uniqueValues.length >= 2) {
-    combinationString = combinationString.replace(/y/g, uniqueValues[1]);
+  var rollBucket = [0, 0, 0, 0, 0, 0, 0];
+  roll.forEach(item => rollBucket[item]++);
+
+  var xToMatch = 0;
+  var yToMatch = 0;
+
+  // clear out defined numbers first
+  for (var i = 0; i < combination.length; i++) {
+    var match = combination[i];
+
+    if (!isNaN(match)) {
+      if (--rollBucket[parseInt(match)] < 0) {
+        return false;
+      }
+    } else if (match == "x") {
+      xToMatch++;
+    } else if (match == "y") {
+      yToMatch++;
+    }
   }
-  combinationString = combinationString.replace(/\*/g, "");
 
-  if (rollString.includes(combinationString)) {
+  if (xToMatch == 0 && yToMatch == 0) {
     return true;
+  } else if (xToMatch == 0 && yToMatch > 0) {
+    // to simplify, just pass "y"s to "x"s
+    xToMatch = yToMatch;
+    yToMatch = 0;
+  }
+
+  for (var i = 1; i < rollBucket.length; i++) {
+    if (yToMatch > 0) {
+      for (var j = i+1; j < rollBucket.length; j++) {
+        if ((rollBucket[i] >= xToMatch && rollBucket[j] >= yToMatch) ||
+            (rollBucket[i] >= yToMatch && rollBucket[j] >= xToMatch)) {
+          return true;
+        }
+      }
+    } else if (rollBucket[i] >= xToMatch) {
+      return true;
+    }
   }
 
   return false;
@@ -128,12 +158,10 @@ function __evaluateRoll(roll) {
  * @returns the prize tier or null if it does not fall under any.
  */
 function __compareChiongGuan(rollA, rollB) {
-  var rollAF = rollA.sort().filter((item, i) => item === 4);
-  var rollBF = rollB.sort().filter((item, i) => item === 4);
-
+  // just add, assume that this is a valid Chiong Guan roll
   var sumReducer = (a, b) => a + b;
-  var sumA = rollAF.reduce(sumReducer);
-  var sumB = rollBF.reduce(sumReducer);
+  var sumA = rollA.reduce(sumReducer);
+  var sumB = rollB.reduce(sumReducer);
 
   return sumA > sumB ? 1 : -1;
 }
@@ -195,7 +223,7 @@ function getRollLabel(roll) {
  * 
  * @param {Array} rollA a 6-number array representing each dice result.
  * @param {Array} rollA a 6-number array representing each dice result.
- * @returns {String} The chinese name of the roll combination. Null if it's a no-prize roll.
+ * @returns {Number} -1 if rollA is lesser than rollB, 0 if equal, and 1 otherwise.
  */
 function compareRolls(rollA, rollB) {
   var resultA = __evaluateRoll(rollA);
