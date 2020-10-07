@@ -195,7 +195,7 @@ function getRollLabel(roll) {
  * 
  * @param {Array} rollA a 6-number array representing each dice result.
  * @param {Array} rollA a 6-number array representing each dice result.
- * @returns {String} The chinese name of the roll combination. Null if it's a no-prize roll.
+ * @returns {Number} -1 if rollA is lesser than rollB, 0 if equal, and 1 otherwise.
  */
 function compareRolls(rollA, rollB) {
   var resultA = __evaluateRoll(rollA);
