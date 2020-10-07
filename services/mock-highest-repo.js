@@ -21,6 +21,15 @@ async function saveHighestRoll(channelId, userId, rolled) {
 }
 
 /**
+ * Clears the highest roll in a channel specified by the `channelId`.
+ * @param {String} channelId
+ * @returns {Void}
+ */
+async function clearHighestRoll(channelId) {
+  delete mockDb[channelId]
+}
+
+/**
  * Fetches the highest roll from the specified channel.
  * @param {String} channelId
  */
@@ -33,5 +42,6 @@ module.exports = async () => {
   return {
     saveHighestRoll,
     getHighestRoll,
+    clearHighestRoll,
   }
 }

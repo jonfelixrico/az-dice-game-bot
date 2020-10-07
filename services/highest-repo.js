@@ -50,6 +50,17 @@ async function getHighestRoll(channelId) {
 }
 
 /**
+ * Clears the highest roll in a channel specified by the `channelId`.
+ * @param {String} channelId
+ * @returns {Void}
+ */
+async function clearHighestRoll(channelId) {
+  sql.prepare('delete from HIGHEST_ROLLS where channelId = @channelId').run({
+    channelId,
+  })
+}
+
+/**
  * Create table for highest roll
  */
 async function createTable() {
@@ -83,5 +94,6 @@ module.exports = async () => {
   return {
     saveHighestRoll,
     getHighestRoll,
+    clearHighestRoll,
   }
 }
