@@ -73,7 +73,22 @@ const PRIZE_TIERS = (() => {
  * @returns true if the roll falls under the combination, false otherwise.
  */
 function __doesRollMeetRequirement(roll, combination) {
-  // IMPLEMENT
+  // Sort the roll dice and combinations first
+  var rollString = roll.sort().join("");
+  var combinationString = combination.sort().join("");
+  var uniqueValues = roll.filter((item, i, ar) => ar.indexOf(item) === i);
+
+  combinationString.replace("x", uniqueValues[0]);
+  if (uniqueValues.length >= 2) {
+    combinationString.replace("y", uniqueValues[1]);
+  }
+  combinationString.replace("*", "");
+
+  if (rollString.includes(combinationString)) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
