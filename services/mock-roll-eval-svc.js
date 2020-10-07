@@ -128,12 +128,10 @@ function __evaluateRoll(roll) {
  * @returns the prize tier or null if it does not fall under any.
  */
 function __compareChiongGuan(rollA, rollB) {
-  var rollAF = rollA.sort().filter((item, i) => item === 4);
-  var rollBF = rollB.sort().filter((item, i) => item === 4);
-
+  // just add, assume that this is a valid Chiong Guan roll
   var sumReducer = (a, b) => a + b;
-  var sumA = rollAF.reduce(sumReducer);
-  var sumB = rollBF.reduce(sumReducer);
+  var sumA = rollA.reduce(sumReducer);
+  var sumB = rollB.reduce(sumReducer);
 
   return sumA > sumB ? 1 : -1;
 }
