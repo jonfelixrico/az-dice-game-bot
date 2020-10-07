@@ -42,7 +42,16 @@ function generateRepsonseString(author, rolled, rollLabel) {
  * matches the set command prefix for the app.
  * @param {Message} message
  */
-async function processCommand({ message, highestRollRepo, rollEvalSvc }) {
+async function processCommand({
+  message,
+  highestRollRepo,
+  rollEvalSvc,
+  executorSvc,
+}) {
+  console.debug(
+    `Received ${COMMAND} from ${message.author.username} (${message.author.id}) in channel ${message.channel.name} (${message.channel.id}).`
+  )
+
   // react to the user's message as acknowlegedmenet that the bot recognized the command
   await message.react('🎲')
   const { author, channel } = message
@@ -50,16 +59,25 @@ async function processCommand({ message, highestRollRepo, rollEvalSvc }) {
   const rolled = rollDice()
   const rollLabel = rollEvalSvc.getRollLabel(rolled)
 
-  const highestRoll = await highestRollRepo.getHighestRoll(channel.id)
+  try {
+    await executorSvc.queueJob(async () => {
+      const highestRoll = await highestRollRepo.getHighestRoll(channel.id)
 
-  if (
-    rollLabel &&
-    (!highestRoll || rollEvalSvc.compareRolls(rolled, highestRoll) === 1)
-  ) {
-    await highestRollRepo.saveHighestRoll(channel.id, author.id, rolled)
+      if (
+        rollLabel &&
+        (!highestRoll || rollEvalSvc.compareRolls(rolled, highestRoll) === 1)
+      ) {
+        await highestRollRepo.saveHighestRoll(channel.id, author.id, rolled)
+      }
+
+      await message.channel.send(
+        generateRepsonseString(author, rolled, rollLabel)
+      )
+    }, channel.id)
+  } catch (e) {
+    console.debug(e)
+    await message.reply('Something went wrong while processing the command.')
   }
-
-  await message.channel.send(generateRepsonseString(author, rolled, rollLabel))
 }
 
 module.exports = (injections) => {
