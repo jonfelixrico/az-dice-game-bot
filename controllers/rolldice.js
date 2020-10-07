@@ -73,7 +73,6 @@ async function processCommand({
       await message.channel.send(
         generateRepsonseString(author, rolled, rollLabel)
       )
-      await message.react('👌')
     }, channel.id)
   } catch (e) {
     console.debug(e)

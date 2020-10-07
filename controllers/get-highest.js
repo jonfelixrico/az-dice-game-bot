@@ -55,7 +55,6 @@ async function processCommand({
       const responseString = generateResponse(highestRoll, rollEvalSvc)
 
       await channel.send(responseString)
-      await message.react('👌')
     }, channel.id)
   } catch (e) {
     await message.reply('something went wrong while processing your command.')
