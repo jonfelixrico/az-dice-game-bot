@@ -33,16 +33,29 @@ function generateResponse(highestRoll, svc) {
   ].join('\n')
 }
 
-async function processCommand({ message, highestRollRepo, rollEvalSvc }) {
+async function processCommand({
+  message,
+  highestRollRepo,
+  rollEvalSvc,
+  executorSvc,
+}) {
   // this is as acknowledgement to the user
   await message.react('🎲')
 
   const { channel } = message
   // get the highest roll from the repository.
-  const highestRoll = await highestRollRepo.getHighestRoll(channel.id)
-  const responseString = generateResponse(highestRoll, rollEvalSvc)
 
-  await channel.send(responseString)
+  try {
+    await executorSvc.queueJob(async () => {
+      const highestRoll = await highestRollRepo.getHighestRoll(channel.id)
+      const responseString = generateResponse(highestRoll, rollEvalSvc)
+
+      await channel.send(responseString)
+      await message.react('👌')
+    }, channel.id)
+  } catch (e) {
+    await message.reply('something went wrong while processing your command.')
+  }
 }
 
 module.exports = (injections) => {
