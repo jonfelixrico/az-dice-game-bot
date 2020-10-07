@@ -30,10 +30,8 @@ async function processCommand({ message, highestRollRepo, executorSvc }) {
 }
 
 module.exports = (injections) => {
-  const { client } = injections
-  client.on('message', (message) => {
-    if (message.content === COMMAND) {
-      processCommand({ message, ...injections })
-    }
-  })
+  const { messageSvc } = injections
+  messageSvc.onCommand(COMMAND, (message) =>
+    processCommand({ message, ...injections })
+  )
 }

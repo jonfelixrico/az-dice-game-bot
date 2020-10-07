@@ -81,12 +81,8 @@ async function processCommand({
 }
 
 module.exports = (injections) => {
-  const { client } = injections
-  client.on('message', (message) => {
-    if (message.content !== COMMAND) {
-      return
-    }
-
+  const { messageSvc } = injections
+  messageSvc.onCommand(COMMAND, (message) =>
     processCommand({ message, ...injections })
-  })
+  )
 }
