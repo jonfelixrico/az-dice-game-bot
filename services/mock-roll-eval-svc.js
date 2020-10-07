@@ -163,7 +163,11 @@ function __compareChiongGuan(rollA, rollB) {
   var sumA = rollA.reduce(sumReducer);
   var sumB = rollB.reduce(sumReducer);
 
-  return sumA > sumB ? 1 : -1;
+  if (sumA != sumB) {
+    return sumA > sumB ? 1 : -1;
+  } else {
+    return 0;
+  }
 }
 
 /**
