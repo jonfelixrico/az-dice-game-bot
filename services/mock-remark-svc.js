@@ -3,8 +3,8 @@ let mockOnlyCtr = 0
 
 /**
  *
- * @param {Number} rank
- * @param {Number} subRank
+ * @param {Number} rank If null/undefined, then it represents no rank.
+ * @param {Number} subRank Only necessary for the top tier rolls.
  */
 function getRemarks(rank, subRank) {
   const mode = mockOnlyCtr++ % 2
