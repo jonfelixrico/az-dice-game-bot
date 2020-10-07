@@ -1,6 +1,5 @@
-const mockDb = {}
-const SQLite = require("better-sqlite3")
-const sql = new SQLite("./dicegame.sqlite")
+const SQLite = require('better-sqlite3')
+const sql = new SQLite('./dicegame.sqlite')
 
 /**
  * Saves the highest roll (`rolled`) into the map. If there's
@@ -13,16 +12,19 @@ const sql = new SQLite("./dicegame.sqlite")
  * @returns {Promise} A promise that resolves when the DB has finished saving.
  */
 async function saveHighestRoll(channelId, userId, rolledArray) {
-  // just save, no need for comparisons or anything 
+  // just save, no need for comparisons or anything
   highestRoll = {
     userId: userId,
     rolled: JSON.stringify(rolledArray),
-    rollDt: (new Date()).toISOString(),
-    channelId: channelId
+    rollDt: new Date().toISOString(),
+    channelId: channelId,
   }
 
-  sql.prepare("insert or replace into HIGHEST_ROLLS (channelId, userId, rolled, rollDt) VALUES (@channelId, @userId, @rolled, @rollDt);").run(highestRoll);
-
+  sql
+    .prepare(
+      'insert or replace into HIGHEST_ROLLS (channelId, userId, rolled, rollDt) VALUES (@channelId, @userId, @rolled, @rollDt);'
+    )
+    .run(highestRoll)
 }
 
 /**
@@ -30,7 +32,13 @@ async function saveHighestRoll(channelId, userId, rolledArray) {
  * @param {String} channelId
  */
 async function getHighestRoll(channelId) {
-  var highestRoll = sql.prepare("select * from HIGHEST_ROLLS where channelId = ?").get(channelId);
+  const highestRoll = sql
+    .prepare('select * from HIGHEST_ROLLS where channelId = ?')
+    .get(channelId)
+
+  if (!highestRoll) {
+    return null
+  }
 
   // parse string to array
   highestRoll.rolled = JSON.parse(highestRoll.rolled)
@@ -45,21 +53,33 @@ async function getHighestRoll(channelId) {
  * Create table for highest roll
  */
 async function createTable() {
-  const table = sql.prepare("select count(*) from SQLITE_MASTER where TYPE='table' and NAME = 'HIGHEST_ROLLS';").get();
+  const table = sql
+    .prepare(
+      "select count(*) from SQLITE_MASTER where TYPE='table' and NAME = 'HIGHEST_ROLLS';"
+    )
+    .get()
 
-  if(!table['count(*)']) {
+  if (!table['count(*)']) {
     // If the table isn't there, create it and setup the database correctly.
-    sql.prepare("create table HIGHEST_ROLLS (channelId TEXT PRIMARY KEY, userId TEXT, rolled TEXT, rollDt TEXT);").run();
+    sql
+      .prepare(
+        'create table HIGHEST_ROLLS (channelId TEXT PRIMARY KEY, userId TEXT, rolled TEXT, rollDt TEXT);'
+      )
+      .run()
     // Ensure that the "id" row is always unique and indexed.
-    sql.prepare("create unique index idx_channel_id ON HIGHEST_ROLLS (channelId);").run();
-    sql.pragma("synchronous = 1");
-    sql.pragma("journal_mode = wal");
+    sql
+      .prepare(
+        'create unique index idx_channel_id ON HIGHEST_ROLLS (channelId);'
+      )
+      .run()
+    sql.pragma('synchronous = 1')
+    sql.pragma('journal_mode = wal')
   }
 }
 
 module.exports = async () => {
   // instantiate the table
-  await createTable();
+  await createTable()
   return {
     saveHighestRoll,
     getHighestRoll,
