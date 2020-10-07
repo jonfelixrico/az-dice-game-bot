@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const FILENAME = "../data/prize-tier.json";
+const FILENAME = "data/prize-tier.json";
 
 /**
  * Represents a possible dice combination requirement for a prize tier.
@@ -43,7 +43,7 @@ class DiceRoll {
 
 }
 
-const PRIZE_TIERS = (() => {
+const createPrizeTiers = (() => {
   let jsonFile = fs.readFileSync(FILENAME);
   let tier = JSON.parse(jsonFile);
 
@@ -64,6 +64,8 @@ const PRIZE_TIERS = (() => {
 
 });
 
+const PRIZE_TIERS = createPrizeTiers();
+
 /**
  * Evaluates the dice roll if it falls under the dice combination.
  *
@@ -73,16 +75,19 @@ const PRIZE_TIERS = (() => {
  * @returns true if the roll falls under the combination, false otherwise.
  */
 function __doesRollMeetRequirement(roll, combination) {
+  if (roll === null) {
+      return false
+  }
   // Sort the roll dice and combinations first
   var rollString = roll.sort().join("");
   var combinationString = combination.sort().join("");
   var uniqueValues = roll.filter((item, i, ar) => ar.indexOf(item) === i);
 
-  combinationString.replace("x", uniqueValues[0]);
+  combinationString = combinationString.replace(/x/g, uniqueValues[0]);
   if (uniqueValues.length >= 2) {
-    combinationString.replace("y", uniqueValues[1]);
+    combinationString = combinationString.replace(/y/g, uniqueValues[1]);
   }
-  combinationString.replace("*", "");
+  combinationString = combinationString.replace(/\*/g, "");
 
   if (rollString.includes(combinationString)) {
     return true;
@@ -123,7 +128,14 @@ function __evaluateRoll(roll) {
  * @returns the prize tier or null if it does not fall under any.
  */
 function __compareChiongGuan(rollA, rollB) {
-  // IMPLEMENT
+  var rollAF = rollA.sort().filter((item, i) => item === 4);
+  var rollBF = rollB.sort().filter((item, i) => item === 4);
+
+  var sumReducer = (a, b) => a + b;
+  var sumA = rollAF.reduce(sumReducer);
+  var sumB = rollBF.reduce(sumReducer);
+
+  return sumA > sumB ? 1 : -1;
 }
 
 /**
@@ -170,7 +182,12 @@ function __doCompareRolls(rollA, rollB) {
  * @returns {String} The chinese name of the roll combination. Null if it's a no-prize roll.
  */
 function getRollLabel(roll) {
-  return __evaluateRoll(roll).prizeTier.name;
+  var rollDice = __evaluateRoll(roll);
+  if (rollDice == null) {
+    return null;
+  }
+
+  return rollDice.prizeTier.name;
 }
 
 /**
