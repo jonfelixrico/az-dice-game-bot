@@ -65,7 +65,8 @@ async function processCommand({
 
       if (
         rollLabel &&
-        (!highestRoll || rollEvalSvc.compareRolls(rolled, highestRoll) === 1)
+        (!highestRoll ||
+          rollEvalSvc.compareRolls(rolled, highestRoll.rolled) === 1)
       ) {
         await highestRollRepo.saveHighestRoll(channel.id, author.id, rolled)
       }
