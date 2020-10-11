@@ -1,40 +1,51 @@
 class MockRollHistoryRepo {
   historyPerChannel = {}
+  idSeq = 1
 
   constructor(injected) {
     this.injected = injected
   }
 
-  pushToHistory({ userId, channelId, rolled, rollDt, rank, subRank }) {
+  /**
+   * Pushes a roll the user made to the history.
+   * @param {Object} param0
+   */
+  pushToHistory({ userId, channelId, rolled, rollDt, rank, subrank }) {
+    const { historyPerChannel } = this
     if (!historyPerChannel[channelId]) {
-      this.historyPerChannel[channelId] = []
+      historyPerChannel[channelId] = []
     }
 
-    this.historyPerChannel[channelId].push({
+    const roll = {
+      id: this.idSeq++,
+
       userId,
       channelId,
+
       rolled,
       rollDt: rollDt || new Date(),
+
       rank,
-      subRank,
-    })
+      subrank,
+    }
+
+    historyPerChannel[channelId].push(roll)
+    return roll
   }
 
-  clearHistory(channelId) {
+  /**
+   * Clears the roll history of the specified channel.
+   * @param {String} channelId
+   */
+  clearChannelRollHistory(channelId) {
     delete this.historyPerChannel[channelId]
   }
 
-  getLastRoll(channelId) {
-    const historyArr = this.historyPerChannel[channelId]
-
-    if (!historyArr || !historyArr.length) {
-      return null
-    }
-
-    return historyArr[historyArr.length - 1]
-  }
-
-  getHistory(channelId) {
+  /**
+   * Gets the roll history of the specified channel.
+   * @param {String} channelId
+   */
+  getChannelRollHistory(channelId) {
     const historyArr = this.historyPerChannel[channelId]
     return historyArr || []
   }
