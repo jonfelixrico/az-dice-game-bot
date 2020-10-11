@@ -17,10 +17,10 @@ class HistoryController {
     this.initListeners()
   }
 
-  formatDate(date) {
+  formatDate(date, forceAbsoluteDate) {
     const momentDt = moment(date)
 
-    if (momentDt.isSame(new Date(), 'day')) {
+    if (!forceAbsoluteDate && momentDt.isSame(new Date(), 'day')) {
       return `today, ${momentDt.format('h:mm:ss A')}`
     }
 
@@ -64,6 +64,21 @@ class HistoryController {
     ].join('\n')
   }
 
+  generateTallyResponse(channelId, tally) {
+    const responseStrBuff = [
+      `Here is the rank tally for <#${channelId}> as of ${this.formatDate(
+        new Date(),
+        true
+      )}`,
+    ]
+
+    for (const { label, count } of tally) {
+      responseStrBuff.push(`**${label}:** ${count}`)
+    }
+
+    return responseStrBuff.join('\n')
+  }
+
   async handleLast(message) {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
@@ -80,12 +95,22 @@ class HistoryController {
     }, channelId)
   }
 
+  async handleTally(message) {
+    const channelId = message.channel.id
+    await this.executor.queueJob(async () => {
+      const tally = await this.interactor.getChannelTallyByRank(channelId)
+      await message.channel.send(this.generateTallyResponse(channelId, tally))
+    }, channelId)
+  }
+
   initListeners() {
     const { messageSvc } = this
 
     messageSvc.onCommand(HistoryCommands.HIGHEST, this.handleHighest.bind(this))
 
     messageSvc.onCommand(HistoryCommands.LAST_ROLL, this.handleLast.bind(this))
+
+    messageSvc.onCommand(HistoryCommands.TALLY, this.handleTally.bind(this))
   }
 }
 

@@ -61,7 +61,7 @@ class RollInteractor {
     return roll && roll.userId === userId
   }
 
-  async getGroupedChannelHistory(channelId) {
+  async getChannelHistoryByRank(channelId) {
     const grouped = await this.rollRepo
       .getChannelRollHistory(channelId)
       .reduce((map, roll) => {
@@ -96,6 +96,17 @@ class RollInteractor {
       return {
         ...rollRank,
         rolls: grouped ? grouped.rolls : [],
+      }
+    })
+  }
+
+  async getChannelTallyByRank(channelId) {
+    const groupedHistory = await this.getChannelHistoryByRank(channelId)
+
+    return groupedHistory.map(({ rolls, ...data }) => {
+      return {
+        ...data,
+        count: rolls.length,
       }
     })
   }
