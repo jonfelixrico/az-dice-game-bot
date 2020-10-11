@@ -1,9 +1,19 @@
 module.exports = async (injected) => {
+  const rollEvalSvc = await require('./mock-roll-eval-svc-2')(injected)
+  const executorSvc = await require('./executor-svc')(injected)
+  const messageSvc = await require('./message-svc')(injected)
+  const rollHistoryRepo = await require('./mock-roll-history-repo')(injected)
+  const rollInteractor = await require('./roll-interactor')({
+    ...injected,
+    rollHistoryRepo,
+    rollEvalSvc,
+  })
+
   return {
-    highestRollRepo: await require('./highest-repo')(injected),
-    rollEvalSvc: await require('./mock-roll-eval-svc')(injected),
-    executorSvc: await require('./executor-svc')(injected),
-    messageSvc: await require('./message-svc')(injected),
-    lastRollRepo: await require('./simple-last-roll-repo')(injected),
+    rollEvalSvc,
+    executorSvc,
+    messageSvc,
+    rollHistoryRepo,
+    rollInteractor,
   }
 }
