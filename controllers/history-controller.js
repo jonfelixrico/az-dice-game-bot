@@ -5,6 +5,7 @@ const HistoryCommands = {
   LAST_ROLL: '!history last',
   HIGHEST: '!history highest',
   TALLY: '!history tally',
+  CLEAR: '!history clear',
 }
 
 class HistoryController {
@@ -79,6 +80,16 @@ class HistoryController {
     return responseStrBuff.join('\n')
   }
 
+  async handleClear(message) {
+    const channelId = message.channel.id
+    this.executor.queueJob(async () => {
+      await this.interactor.clearChannelHistory(channelId)
+      await message.channel.send(
+        `${message.author} has cleared the history for channel ${message.channel}.`
+      )
+    }, channelId)
+  }
+
   async handleLast(message) {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
@@ -111,6 +122,8 @@ class HistoryController {
     messageSvc.onCommand(HistoryCommands.LAST_ROLL, this.handleLast.bind(this))
 
     messageSvc.onCommand(HistoryCommands.TALLY, this.handleTally.bind(this))
+
+    messageSvc.onCommand(HistoryCommands.CLEAR, this.handleClear.bind(this))
   }
 }
 

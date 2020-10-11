@@ -110,6 +110,10 @@ class RollInteractor {
       }
     })
   }
+
+  async clearChannelHistory(channelId) {
+    await this.rollRepo.clearChannelRollHistory(channelId)
+  }
 }
 
 module.exports = (injected) => new RollInteractor(injected)

@@ -38,7 +38,7 @@ class MockRollHistoryRepo {
    * @param {String} channelId
    */
   clearChannelRollHistory(channelId) {
-    delete this.historyPerChannel[channelId]
+    this.historyPerChannel[channelId] = []
   }
 
   /**
