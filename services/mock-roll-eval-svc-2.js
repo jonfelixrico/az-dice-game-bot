@@ -1,5 +1,10 @@
+let mockCompareVarietyCtr = 0
+const EVAL_COMPARE_INDEX_MAPPING = [-1, 0, 1]
+
+let mockEvalauteVarietyCtr = 0
+
 function compareEvals(evalA, evalB) {
-  return 1
+  return EVAL_COMPARE_INDEX_MAPPING[mockCompareVarietyCtr++ % 2]
 }
 
 function getEvalLabel(eval) {
@@ -7,7 +12,7 @@ function getEvalLabel(eval) {
 }
 
 function evaluate(roll) {
-  return [6, 1]
+  return mockEvalauteVarietyCtr++ % 2 === 0 ? null : [6, 1]
 }
 
 function getRankList() {
