@@ -1,4 +1,6 @@
 const { diceRollToString } = require('./utils')
+const { MessageEmbed } = require('discord.js')
+const RemarkType = require('../enums/remark-type')
 
 const RollCommands = {
   FORCED: '!roll force',
@@ -6,40 +8,55 @@ const RollCommands = {
 }
 
 class RollController {
-  constructor({ rollInteractor, rollEvalSvc, messageSvc, executorSvc }) {
+  constructor({
+    rollInteractor,
+    rollEvalSvc,
+    messageSvc,
+    executorSvc,
+    remarkSvc,
+  }) {
     this.interactor = rollInteractor
     this.rollEval = rollEvalSvc
     this.messageSvc = messageSvc
     this.executor = executorSvc
+    this.remarkSvc = remarkSvc
 
     this.initListeners()
   }
 
-  generateResponseString({
-    isNewHighest,
-    rolled,
-    userId,
-    channelId,
-    rank,
-    subrank,
-  }) {
-    const authorMention = `<@${userId}>`
-    let authorStr = null
+  async generateResponse(rollData) {
+    const { isNewHighest, rolled, userId, channelId, rank, subrank } = rollData
+
+    const embed = new MessageEmbed()
 
     if (rank) {
-      const comboLabel = this.rollEval.getEvalLabel({ rank, subrank })
-      const strBuff = [`${authorMention} rolled _**${comboLabel}!**_`]
-
-      if (isNewHighest) {
-        strBuff.push(`They now have the highest roll in <#${channelId}>.`)
-      }
-
-      authorStr = strBuff.join(' ')
-    } else {
-      authorStr = `${authorMention} didn't roll a prize-winning combination.`
+      embed.setTitle(this.rollEval.getEvalLabel({ rank, subrank }))
     }
 
-    return [authorStr, `> ${diceRollToString(rolled)}`].join('\n')
+    const descStrBuffer = [`<@${userId}> rolled ${diceRollToString(rolled)}`]
+    if (rank && isNewHighest) {
+      descStrBuffer.push(`This is now the new highest roll in <#${channelId}>.`)
+    } else if (!rank) {
+      descStrBuffer.push('This roll does not match any prize combinations.')
+    }
+
+    embed.setDescription(descStrBuffer.join('\n'))
+
+    const remark = await this.remarkSvc.getRemark(rollData)
+
+    if (remark) {
+      if (remark.type === RemarkType.STRING) {
+        embed.addFields({
+          // we won't use the name field.
+          name: '\u200B',
+          value: remark.content,
+        })
+      } else {
+        embed.setImage(remark.content)
+      }
+    }
+
+    return embed
   }
 
   doRoll(message) {
@@ -51,7 +68,7 @@ class RollController {
 
         const roll = await this.interactor.roll(channelId, userId)
 
-        await message.channel.send(this.generateResponseString(roll))
+        await message.channel.send(await this.generateResponse(roll))
       } catch (e) {
         console.error(e)
         await message.reply(
