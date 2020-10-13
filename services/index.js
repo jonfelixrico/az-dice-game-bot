@@ -9,11 +9,14 @@ module.exports = async (injected) => {
     rollEvalSvc,
   })
 
+  const remarkSvc = await require('./mock-remark-svc')(injected)
+
   return {
     rollEvalSvc,
     executorSvc,
     messageSvc,
     rollHistoryRepo,
     rollInteractor,
+    remarkSvc,
   }
 }
