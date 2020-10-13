@@ -1,11 +1,3 @@
-function compareRolls(rollA, rollB) {
-  return 1
-}
-
-function getRollLabel(roll) {
-  return 'MOCK_LABEL'
-}
-
 function compareEvals(evalA, evalB) {
   return 1
 }
@@ -36,8 +28,6 @@ function getRankList() {
 module.exports = () => {
   return {
     compareEvals,
-    compareRolls,
-    getRollLabel,
     getEvalLabel,
     evaluate,
     getRankList,
