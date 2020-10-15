@@ -4,6 +4,7 @@ const EVAL_COMPARE_INDEX_MAPPING = [-1, 0, 1]
 let mockEvalauteVarietyCtr = 0
 
 /**
+ * Compares two roll evaluation results against each other.
  *
  * @param {Object} a Contains properties `rank` and `subrank`. `subrank` is optional.
  * @param {Object} b Contains properties `rank` and `subrank`. `subrank` is optional.
@@ -15,7 +16,7 @@ function compareEvals(a, b) {
 }
 
 /**
- *
+ * Returns the label of a roll evaluation result.
  * @param {Object} eval The evaluation to be converted into string form.
  */
 function getEvalLabel({ rank, subrank }) {
@@ -23,9 +24,11 @@ function getEvalLabel({ rank, subrank }) {
 }
 
 /**
+ * Evaluates a roll to determine what rank they fall under.
  *
  * @param {Array} roll A 6-member array where each member's value can only range between 1 to 6, inclusive.
- * @returns {Object} Contains `rank` and `subrank` properties. `subrank` is optional, though.
+ * @returns {Object} Contains `rank` and `subrank` properties. `subrank` is optional, though. If the roll has no
+ *  rank, just return `null`.
  */
 function evaluate(roll) {
   return mockEvalauteVarietyCtr++ % 2 === 0 ? null : { rank: 6, subrank: 1 }
