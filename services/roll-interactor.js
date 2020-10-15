@@ -21,7 +21,7 @@ class RollInteractor {
     const { rollHistoryRepo, rollEvalSvc } = this.injected
     const rolled = this._rollDice()
 
-    const [rank, subrank] = rollEvalSvc.evaluate(rolled) || []
+    const { rank, subrank } = rollEvalSvc.evaluate(rolled) || {}
 
     const newRoll = await rollHistoryRepo.pushToHistory({
       userId,

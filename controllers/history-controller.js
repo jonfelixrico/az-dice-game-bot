@@ -51,7 +51,7 @@ class HistoryController {
 
   generateHighestRollReponse(roll) {
     if (!roll || !roll.rank) {
-      return 'There were highest rolls recorded for this channel.'
+      return 'There were no highest rolls recorded for this channel.'
     }
 
     const { userId, rollDt, rolled, channelId, rank, subrank } = roll
