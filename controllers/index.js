@@ -1,5 +1,4 @@
 module.exports = (injections) => {
-  require('./rolldice')(injections)
-  require('./get-highest')(injections)
-  require('./clear-highest')(injections)
+  require('./roll-controller')(injections)
+  require('./history-controller')(injections)
 }

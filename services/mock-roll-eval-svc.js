@@ -1,243 +1,63 @@
-const fs = require('fs');
+let mockCompareVarietyCtr = 0
+const EVAL_COMPARE_INDEX_MAPPING = [-1, 0, 1]
 
-const FILENAME = "data/prize-tier.json";
-
-/**
- * Represents a possible dice combination requirement for a prize tier.
- */
-class RollCombination {
-
-  constructor(tier, roll) {
-    this.tier = tier;
-    this.roll = roll;
-  }
-
-}
+let mockEvalauteVarietyCtr = 0
 
 /**
- * Represents a prize tier that a dice roll can fall under and the dice
- * combinations requirements.
- */
-class PrizeTier {
-
-  constructor(name, rank, subrank, desc, combinations) {
-    this.name = name;
-    this.rank = rank;
-    this.subrank = subrank;
-    this.desc = desc;
-    this.combinations = combinations;
-  }
-
-}
-
-/**
- * Internal class that represents the results of a user's dice roll. 
- */
-class DiceRoll {
-
-  constructor(roll, prizeTier, combinationTier) {
-    this.roll = roll;
-    this.prizeTier = prizeTier;
-    this.combination = combinationTier;
-  }
-
-}
-
-const createPrizeTiers = (() => {
-  let jsonFile = fs.readFileSync(FILENAME);
-  let tier = JSON.parse(jsonFile);
-
-  return tier.map(t => {
-    var name = t.name;
-    var rank = t.rank;
-    var subrank = t.subrank || 0;
-    var desc = t.desc;
-    var combinations = t.combination.map(c => {
-      var tier = c.tier || 0;
-      var roll = c.roll;
-
-      return new RollCombination(tier, roll);
-    });
-
-    return new PrizeTier(name, rank, subrank, desc, combinations);
-  });
-
-});
-
-const PRIZE_TIERS = createPrizeTiers();
-
-/**
- * Evaluates the dice roll if it falls under the dice combination.
+ * Compares two roll evaluation results against each other.
  *
- * @param {Array} roll        a 6-number array representing each dice result.
- * @param {Array} combination a 6-string array representing each dice result. Valid characters 
- *                              are numbers 1 - 6, "*" for wildcard, and "x" & "y" for matching numbers.
- * @returns {Boolean} true if the roll falls under the combination, false otherwise.
+ * @param {Object} a Contains properties `rank` and `subrank`. `subrank` is optional.
+ * @param {Object} b Contains properties `rank` and `subrank`. `subrank` is optional.
+ * @returns {Number} 1 if `a` is greater than `b`. -1 if `b` is greater than `a`. If they are tied, 0 is returned instead.
  */
-function __doesRollMeetRequirement(roll, combination) {
-  // combination is expecting [1-6]s then [x]s then [y]s then [*]s.
-
-  if (roll === null) {
-      return false
-  }
-
-  var rollBucket = [0, 0, 0, 0, 0, 0, 0];
-  roll.forEach(item => rollBucket[item]++);
-
-  var xToMatch = 0;
-  var yToMatch = 0;
-
-  // clear out defined numbers first
-  for (var i = 0; i < combination.length; i++) {
-    var match = combination[i];
-
-    if (!isNaN(match)) {
-      if (--rollBucket[parseInt(match)] < 0) {
-        return false;
-      }
-    } else if (match == "x") {
-      xToMatch++;
-    } else if (match == "y") {
-      yToMatch++;
-    }
-  }
-
-  if (xToMatch == 0 && yToMatch == 0) {
-    return true;
-  } else if (xToMatch == 0 && yToMatch > 0) {
-    // to simplify, just pass "y"s to "x"s
-    xToMatch = yToMatch;
-    yToMatch = 0;
-  }
-
-  for (var i = 1; i < rollBucket.length; i++) {
-    if (yToMatch > 0) {
-      for (var j = i+1; j < rollBucket.length; j++) {
-        if ((rollBucket[i] >= xToMatch && rollBucket[j] >= yToMatch) ||
-            (rollBucket[i] >= yToMatch && rollBucket[j] >= xToMatch)) {
-          return true;
-        }
-      }
-    } else if (rollBucket[i] >= xToMatch) {
-      return true;
-    }
-  }
-
-  return false;
+function compareEvals(a, b) {
+  // eval objects are arrays containing [rank, subrank]. if there's no subrank, the array can contain just one member
+  return EVAL_COMPARE_INDEX_MAPPING[mockCompareVarietyCtr++ % 2]
 }
 
 /**
- * Evaluates the dice roll and returns the prize tier that it falls in.
+ * Returns the label of a roll evaluation result.
+ * @param {Object} eval The evaluation to be converted into string form.
+ */
+function getEvalLabel({ rank, subrank }) {
+  return 'MOCK_LABEL'
+}
+
+/**
+ * Evaluates a roll to determine what rank they fall under.
  *
- * @param {Array} roll a 6-number array representing each dice result.
- * @returns {DiceRoll} the prize tier, or null if it does not fall under any.
+ * @param {Array} roll A 6-member array where each member's value can only range between 1 to 6, inclusive.
+ * @returns {Object} Contains `rank` and `subrank` properties. `subrank` is optional, though. If the roll has no
+ *  rank, just return `null`.
  */
-function __evaluateRoll(roll) {
-  for (var i = 0; i < PRIZE_TIERS.length; i++) {
-    var prizeTier = PRIZE_TIERS[i];
-    
-    for (var j = 0; j < prizeTier.combinations.length; j++) {
-      var rollCombination = prizeTier.combinations[j];
-      
-      if (__doesRollMeetRequirement(roll, rollCombination.roll)) {
-        var combinationTier = rollCombination.tier || 0;
-        return new DiceRoll(roll, prizeTier, combinationTier);
-      }
-    }
-  }
-
-  return null;
+function evaluate(roll) {
+  return mockEvalauteVarietyCtr++ % 2 === 0 ? null : { rank: 6, subrank: 1 }
 }
 
 /**
- * Compares the special case of evaluating a Chiong Guan subrank 1 roll.
- * This compares the sum of the two wildcard numbers.
- *
- * @param {Array} rollA a 6-number array representing each dice result.
- * @param {Array} rollB a 6-number array representing each dice result.
- * @returns {Number} -1 if rollA is lesser than rollB, 0 if equal, and 1 otherwise.
+ * Returns the different ranks and their labels.
+ * @returns {Array}
  */
-function __compareChiongGuan(rollA, rollB) {
-  // just add, assume that this is a valid Chiong Guan roll
-  var sumReducer = (a, b) => a + b;
-  var sumA = rollA.reduce(sumReducer);
-  var sumB = rollB.reduce(sumReducer);
-
-  if (sumA != sumB) {
-    return sumA > sumB ? 1 : -1;
-  } else {
-    return 0;
-  }
-}
-
-/**
- * Compares the price tiers of two dice roll results.
- * 
- * @param {Array} rollA a DiceRoll object representing the roll.
- * @param {Array} rollB a DiceRoll object representing the roll.
- * @returns {Number} -1 if rollA is lesser than rollB, 0 if equal, and 1 otherwise.
- */
-function __doCompareRolls(rollA, rollB) {
-  if (rollA == null) {
-    if (rollB == null) {
-      return 0;
-    }
-
-    return -1;
-  } else if (rollB == null) {
-    return 1;
-  }
-
-  if (rollA.prizeTier.rank != rollB.prizeTier.rank) {
-    return rollA.prizeTier.rank > rollB.prizeTier.rank ? 1 : -1;
-  }
-
-  if (rollA.prizeTier.subrank != rollB.prizeTier.subrank) {
-    return rollA.prizeTier.subrank > rollB.prizeTier.subrank ? 1 : -1;
-  }
-
-  if (rollA.combinationTier != rollB.combinationTier) {
-    return rollA.combinationTier > rollB.combinationTier ? 1 : -1;
-  }
-
-  if (rollA.prizeTier.rank == 6 && rollA.prizeTier.subrank == 1) {
-    return __compareChiongGuan(rollA.roll, rollB.roll);
-  }
-
-  return 0;
-}
-
-/**
- * Returns the prize tier name of a dice roll.
- *
- * @param {Array} roll a 6-number array representing each dice result.
- * @returns {String} The chinese name of the roll combination. Null if it's a no-prize roll.
- */
-function getRollLabel(roll) {
-  var rollDice = __evaluateRoll(roll);
-  if (rollDice == null) {
-    return null;
-  }
-
-  return rollDice.prizeTier.name;
-}
-
-/**
- * Compares two dice rolls.
- * 
- * @param {Array} rollA a 6-number array representing each dice result.
- * @param {Array} rollA a 6-number array representing each dice result.
- * @returns {Number} -1 if rollA is lesser than rollB, 0 if equal, and 1 otherwise.
- */
-function compareRolls(rollA, rollB) {
-  var resultA = __evaluateRoll(rollA);
-  var resultB = __evaluateRoll(rollB);
-  return __doCompareRolls(resultA, resultB);
+function getRankList() {
+  return [
+    {
+      rank: 6,
+      subrank: 1,
+      label: 'RANK_6_1',
+    },
+    {
+      rank: 6,
+      subrank: 2,
+      label: 'RANK_6_2',
+    },
+  ]
 }
 
 module.exports = () => {
   return {
-    getRollLabel,
-    compareRolls
+    compareEvals,
+    getEvalLabel,
+    evaluate,
+    getRankList,
   }
 }
