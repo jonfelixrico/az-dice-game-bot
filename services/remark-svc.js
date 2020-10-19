@@ -28,13 +28,13 @@ class RemarkSvc {
     
     let replies = []
     
-    if (mode == 0) {
+    if (mode == 1) {
       // show a gif to the user
       remark.type = RemarkType.GIF_URL,
       replies = gifRepliesContent[rank]
     } 
     
-    if (mode == 1) {
+    if (mode == 2) {
       // send a text to the user
       remark.type = RemarkType.STRING,
       replies = textRepliesContent[rank]
