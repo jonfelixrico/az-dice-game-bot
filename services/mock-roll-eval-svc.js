@@ -161,7 +161,7 @@ function __evaluateRoll(roll) {
   return null;
 }
 
-function __checkNullBeforeComparing(a, b) {
+function __checkNullBeforeComparing(rankA, rankB) {
   if (rankA == null) {
     if (rankB == null) {
       return ComparisonResult.EQUAL;
@@ -199,7 +199,7 @@ function __compareRanks(rankA, rankB) {
  * @returns {Number} 1 if `a` is greater than `b`. -1 if `b` is greater than `a`. If they are tied, 0 is returned instead.
  */
 function compareEvals(a, b) {
-  var check = __checkNullBeforeComparing(rankA, rankB);
+  var check = __checkNullBeforeComparing(a.rank, b.rank);
   if (check != null) return check;
 
   if (a.rank != b.rank)
