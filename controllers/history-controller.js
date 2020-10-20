@@ -68,6 +68,16 @@ class HistoryController {
     })
   }
 
+  formatDate(date, forceAbsoluteDate) {
+    const momentDt = moment(date)
+
+    if (!forceAbsoluteDate && momentDt.isSame(new Date(), 'day')) {
+      return `today, ${momentDt.format('h:mm:ss A')}`
+    }
+
+    return momentDt.format('MMM D, YYYY h:mm:ss A')
+  }
+
   generateTallyResponse(channelId, tally) {
     const responseStrBuff = [
       `Here is the rank tally for <#${channelId}> as of ${this.formatDate(
