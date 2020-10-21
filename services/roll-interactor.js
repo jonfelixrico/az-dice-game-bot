@@ -35,7 +35,7 @@ class RollInteractor {
 
     return {
       ...newRoll,
-      isNewHighest: highestRoll || newRoll.id === highestRoll.id,
+      isNewHighest: highestRoll == null || newRoll.id === highestRoll.id,
     }
   }
 
