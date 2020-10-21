@@ -46,7 +46,7 @@ class RollInteractor {
       return null
     }
 
-    return [...history].sort((a, b) => this.evalSvc.compareEvals(b, a))[0]
+    return history.sort((a, b) => this.evalSvc.compareEvals(b, a))[0]
   }
 
   async getChannelLastRoll(channelId) {
