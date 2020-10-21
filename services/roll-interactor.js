@@ -35,7 +35,7 @@ class RollInteractor {
 
     return {
       ...newRoll,
-      isNewHighest: highestRoll || newRoll.id === highestRoll.id,
+      isNewHighest: highestRoll == null || newRoll.id === highestRoll.id,
     }
   }
 
@@ -46,7 +46,7 @@ class RollInteractor {
       return null
     }
 
-    return history.sort((a, b) => this.evalSvc.compareEvals(b, a))[0]
+    return [...history].sort((a, b) => this.evalSvc.compareEvals(b, a))[0]
   }
 
   async getChannelLastRoll(channelId) {
