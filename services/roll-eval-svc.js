@@ -161,13 +161,13 @@ function __evaluateRoll(roll) {
   return null;
 }
 
-function __checkNullBeforeComparing(rankA, rankB) {
-  if (rankA == null) {
-    if (rankB == null) {
+function __checkNullBeforeComparing(a, b) {
+  if (a == null) {
+    if (b == null) {
       return ComparisonResult.EQUAL;
     }
     return ComparisonResult.LESS_THAN;
-  } else if (rankB == null) {
+  } else if (b == null) {
     return ComparisonResult.GREATER_THAN;
   } else {
     return null;
@@ -194,18 +194,24 @@ function __compareRanks(rankA, rankB) {
 /**
  * Compares two roll evaluation results against each other.
  *
- * @param {Object} a Contains properties `rank` and `subrank`. `subrank` is optional.
- * @param {Object} b Contains properties `rank` and `subrank`. `subrank` is optional.
+ * @param {Object} a 6-array dice roll.
+ * @param {Object} b 6-array dice roll.
  * @returns {Number} 1 if `a` is greater than `b`. -1 if `b` is greater than `a`. If they are tied, 0 is returned instead.
  */
 function compareEvals(a, b) {
-  var check = __checkNullBeforeComparing(a.rank, b.rank);
+  var resultA = __evaluateRoll(a);
+  var resultB = __evaluateRoll(b);
+
+  var check = __checkNullBeforeComparing(resultA, resultB);
   if (check != null) return check;
 
-  if (a.rank != b.rank)
-    return __compareRanks(a.rank, b.rank);
-  else if (a.subrank != b.subrank) 
-    return __compareRanks(a.subrank, b.subrank);
+  var rankA = { rank: resultA.prizeTier.rank, subrank: resultA.prizeTier.subrank };
+  var rankB = { rank: resultB.prizeTier.rank, subrank: resultB.prizeTier.subrank };
+
+  if (rankA.rank != rankB.rank)
+    return __compareRanks(rankA.rank, rankB.rank);
+  else if (rankA.subrank != rankB.subrank) 
+    return __compareRanks(rankA.subrank, rankB.subrank);
   else
     return ComparisonResult.EQUAL;
 }
