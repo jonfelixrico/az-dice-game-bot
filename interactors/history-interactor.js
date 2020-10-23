@@ -13,7 +13,7 @@ class HistoryInteractor {
 
   async getRollHistory(channelId, offset, limit) {
     const history = await this.rolls.getRollHistory(channelId)
-    return history.slice(offset, offset + limit)
+    return [...history].reverse().slice(offset, offset + limit)
   }
 
   async getLastRoll(channelId) {
