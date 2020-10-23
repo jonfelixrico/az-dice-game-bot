@@ -30,24 +30,20 @@ class RollRepository {
     return roll
   }
 
-  getChannelLastRoll(channelId) {
-    const history = this.getChannelRollHistory(channelId)
+  getLastRoll(channelId) {
+    const history = this.getRollHistory(channelId)
     return history[history.length - 1]
   }
 
-  voidChannelLastRoll(channelId) {
-    const history = this.getChannelRollHistory(channelId)
-    const lastRoll = rolls[rolls.length - 1]
-    history.pop()
-
-    return lastRoll
+  voidLastRoll(channelId) {
+    return this.getRollHistory(channelId).pop()
   }
 
   /**
    * Clears the roll history of the specified channel.
    * @param {String} channelId
    */
-  clearChannelRollHistory(channelId) {
+  clearRollHistory(channelId) {
     this.historyPerChannel[channelId] = []
   }
 
@@ -55,7 +51,7 @@ class RollRepository {
    * Gets the roll history of the specified channel.
    * @param {String} channelId
    */
-  getChannelRollHistory(channelId) {
+  getRollHistory(channelId) {
     const historyArr = this.historyPerChannel[channelId]
     return historyArr || []
   }

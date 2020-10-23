@@ -10,7 +10,10 @@ async function bootstrap() {
   console.info('Logged in succesfully.')
   // the program is expected to terminate if an error was encountered while connecting to discord
 
-  const services = await require('./services')({ client })
+  const repos = await require('./repositories')({ client })
+  console.info('Initialized repositories.')
+
+  const services = await require('./services')({ client, ...repos })
   console.info('Initialized services.')
 
   require('./controllers')({

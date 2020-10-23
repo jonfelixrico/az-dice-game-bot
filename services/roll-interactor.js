@@ -1,29 +1,27 @@
-const random = require('lodash.random')
+const random = require('lodash/random')
 
 class RollInteractor {
-  constructor(injected) {
-    this.injected = injected
+  constructor({ rollRepo, rollEvalSvc, highestRollCache }) {
+    this.rollRepo = rollRepo
+    this.evalSvc = rollEvalSvc
+    this.highestCache = highestRollCache
   }
 
   _rollDice() {
     return new Array(6).fill().map(() => random(1, 6))
   }
 
-  get rollRepo() {
-    return this.injected.rollHistoryRepo
-  }
-
-  get evalSvc() {
-    return this.injected.rollEvalSvc
+  async didUserDoLastRoll(channelId, userId) {
+    const last = this.rollRepo.getLastRoll(channelId)
+    return last && last.userId === userId
   }
 
   async roll(channelId, userId) {
-    const { rollHistoryRepo, rollEvalSvc } = this.injected
+    const { rollRepo, evalSvc } = this
     const rolled = this._rollDice()
 
-    const { rank, subrank } = rollEvalSvc.evaluate(rolled) || {}
-
-    const newRoll = await rollHistoryRepo.pushToHistory({
+    const { rank, subrank } = evalSvc.evaluate(rolled) || {}
+    const newRoll = await rollRepo.pushToHistory({
       userId,
       channelId,
       rolled,
@@ -31,88 +29,45 @@ class RollInteractor {
       subrank,
     })
 
-    const highestRoll = await this.getChannelHighestRoll(channelId)
+    const isNewHighest = rank && (await this._evaluateIfNewHighest(newRoll))
 
     return {
       ...newRoll,
-      isNewHighest: highestRoll == null || newRoll.id === highestRoll.id,
+      isNewHighest,
+      hasPrize: !!rank,
     }
   }
 
-  async getChannelHighestRoll(channelId) {
-    const history = await this.rollRepo.getChannelRollHistory(channelId)
+  async _evaluateIfNewHighest(roll) {
+    const { highestCache, evalSvc } = this
+    const { channelId } = roll
 
-    if (!history.length) {
-      return null
+    const highest = await this.highestCache.getHighestRoll(channelId)
+
+    if (!highest || evalSvc.compareEvals(roll, highest) === 1) {
+      await highestCache.setHighestRoll(roll)
+      return true
     }
 
-    return [...history].sort((a, b) => this.evalSvc.compareEvals(b, a))[0]
+    return false
   }
 
-  async getChannelLastRoll(channelId) {
-    const history = await this.rollRepo.getChannelRollHistory(channelId)
+  async voidLastRoll(channelId) {
+    const { rollRepo, highestCache } = this
+    const voidedRoll = await rollRepo.voidLastRoll(channelId)
+    const highestRoll = await highestCache.getHighestRoll(channelId)
 
-    return history.length && history[history.length - 1]
-  }
+    const wasVoidedAlsoHighest = voidedRoll.uuid === highestRoll.uuid
+    if (wasVoidedAlsoHighest) {
+      await highestCache.voidHighestRoll(channelId)
+    }
 
-  async didUserDoLastRollInChannel(channelId, userId) {
-    const roll = await this.getChannelLastRoll(channelId)
-
-    return roll && roll.userId === userId
-  }
-
-  async getChannelHistoryByRank(channelId) {
-    const grouped = await this.rollRepo
-      .getChannelRollHistory(channelId)
-      .reduce((map, roll) => {
-        const { rank, subrank } = roll
-        const groupId = [rank || -1, subrank - 1].join('/')
-
-        if (!map[groupId]) {
-          map[groupId] = []
-        }
-
-        map[groupId].push(roll)
-        return map
-      }, {})
-
-    const transformed = Object.values(grouped).map((values) => {
-      const { rank, subrank } = values[0]
-      return {
-        rank,
-        subrank,
-        rolls: values.sort(
-          (a, b) => a.rollDt.getMilliseconds() - b.rollDt.getMilliseconds()
-        ),
-      }
-    })
-
-    return this.evalSvc.getRankList().map((rollRank) => {
-      const { rank, subrank } = rollRank
-      const grouped = transformed.find(
-        (g) => g.rank === rank && g.subrank === subrank
-      )
-
-      return {
-        ...rollRank,
-        rolls: grouped ? grouped.rolls : [],
-      }
-    })
-  }
-
-  async getChannelTallyByRank(channelId) {
-    const groupedHistory = await this.getChannelHistoryByRank(channelId)
-
-    return groupedHistory.map(({ rolls, ...data }) => {
-      return {
-        ...data,
-        count: rolls.length,
-      }
-    })
-  }
-
-  async clearChannelHistory(channelId) {
-    await this.rollRepo.clearChannelRollHistory(channelId)
+    return {
+      voidedRoll,
+      wasVoidedAlsoHighest,
+      newLastRoll: await rollRepo.getLastRoll(channelId),
+      newHighestRoll: await highestCache.getHighestRoll(channelId),
+    }
   }
 }
 

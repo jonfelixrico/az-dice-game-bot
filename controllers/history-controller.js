@@ -12,11 +12,18 @@ const HistoryCommands = {
 const BLANK_SPACE = '\u200B'
 
 class HistoryController {
-  constructor({ rollInteractor, executorSvc, rollEvalSvc, messageSvc }) {
+  constructor({
+    rollInteractor,
+    executorSvc,
+    rollEvalSvc,
+    messageSvc,
+    historyInteractor,
+  }) {
     this.interactor = rollInteractor
     this.executor = executorSvc
     this.rollEval = rollEvalSvc
     this.messageSvc = messageSvc
+    this.hist = historyInteractor
 
     this.initListeners()
   }
@@ -86,7 +93,14 @@ class HistoryController {
       )}`,
     ]
 
-    for (const { label, count } of tally) {
+    const formattedTally = tally
+      .filter(({ rank }) => !!rank)
+      .map(({ count, rank, subrank }) => ({
+        label: this.rollEval.getEvalLabel({ rank, subrank }),
+        count,
+      }))
+
+    for (const { label, count } of formattedTally) {
       responseStrBuff.push(`**${label}:** ${count}`)
     }
 
@@ -96,7 +110,7 @@ class HistoryController {
   async handleClear(message) {
     const channelId = message.channel.id
     this.executor.queueJob(async () => {
-      await this.interactor.clearChannelHistory(channelId)
+      await this.hist.clearHistory(channelId)
       await message.channel.send(
         `${message.author} has cleared the history for channel ${message.channel}.`
       )
@@ -106,7 +120,7 @@ class HistoryController {
   async handleLast(message) {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
-      const roll = await this.interactor.getChannelLastRoll(channelId)
+      const roll = await this.hist.getLastRoll(channelId)
       await message.channel.send(this.generateLastRollResponse(roll))
     }, channelId)
   }
@@ -114,7 +128,7 @@ class HistoryController {
   async handleHighest(message) {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
-      const roll = await this.interactor.getChannelHighestRoll(channelId)
+      const roll = await this.hist.getHighestRoll(channelId)
       await message.channel.send(this.generateHighestRollReponse(roll))
     }, channelId)
   }
@@ -122,7 +136,7 @@ class HistoryController {
   async handleTally(message) {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
-      const tally = await this.interactor.getChannelTallyByRank(channelId)
+      const tally = await this.hist.countPerRank(channelId)
       await message.channel.send(this.generateTallyResponse(channelId, tally))
     }, channelId)
   }
