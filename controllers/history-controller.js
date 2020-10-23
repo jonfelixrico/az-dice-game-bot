@@ -13,15 +13,15 @@ const BLANK_SPACE = '\u200B'
 
 class HistoryController {
   constructor({
-    executorSvc,
-    rollEvalSvc,
-    messageSvc,
+    ExecutorService,
+    RollEvalService,
+    MessageService,
     RollInteractor,
     HistoryInteractor,
   }) {
-    this.executor = executorSvc
-    this.rollEval = rollEvalSvc
-    this.messageSvc = messageSvc
+    this.executor = ExecutorService
+    this.rollEval = RollEvalService
+    this.messageSvc = MessageService
 
     this.hist = HistoryInteractor
     this.interactor = RollInteractor

@@ -9,17 +9,17 @@ const RollCommands = {
 
 class RollController {
   constructor({
-    rollEvalSvc,
-    messageSvc,
-    executorSvc,
-    remarkSvc,
+    RollEvalService,
+    MessageService,
+    ExecutorService,
+    RemarkService,
     RollInteractor,
     HistoryInteractor,
   }) {
-    this.rollEval = rollEvalSvc
-    this.messageSvc = messageSvc
-    this.executor = executorSvc
-    this.remarkSvc = remarkSvc
+    this.rollEval = RollEvalService
+    this.messageSvc = MessageService
+    this.executor = ExecutorService
+    this.remarkSvc = RemarkService
 
     this.interactor = RollInteractor
     this.hist = HistoryInteractor

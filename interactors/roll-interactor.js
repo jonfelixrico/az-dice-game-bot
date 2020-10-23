@@ -1,10 +1,10 @@
 const random = require('lodash/random')
 
 class RollInteractor {
-  constructor({ rollRepo, rollEvalSvc, highestRollCache }) {
-    this.rollRepo = rollRepo
-    this.evalSvc = rollEvalSvc
-    this.highestCache = highestRollCache
+  constructor({ RollRepository, RollEvalService, HighestRollCache }) {
+    this.rollRepo = RollRepository
+    this.evalSvc = RollEvalService
+    this.highestCache = HighestRollCache
   }
 
   _rollDice() {

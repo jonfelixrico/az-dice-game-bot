@@ -1,9 +1,9 @@
 const _ = require('lodash')
 
 class HistoryInteractor {
-  constructor({ rollRepo, highestRollCache }) {
-    this.rolls = rollRepo
-    this.highest = highestRollCache
+  constructor({ RollRepository, HighestRollCache }) {
+    this.rolls = RollRepository
+    this.highest = HighestRollCache
   }
 
   async getRollCount(channelId) {

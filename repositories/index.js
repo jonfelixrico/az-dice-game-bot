@@ -1,6 +1,6 @@
 module.exports = () => {
   return {
-    highestRollCache: require('./highest-roll-cache')(),
-    rollRepo: require('./roll-repository')(),
+    HighestRollCache: require('./highest-roll-cache')(),
+    RollRepository: require('./roll-repository')(),
   }
 }
