@@ -16,10 +16,19 @@ async function bootstrap() {
   const services = await require('./services')({ client, ...repos })
   console.info('Initialized services.')
 
+  const interactors = await require('./interactors')({
+    client,
+    ...repos,
+    ...services,
+  })
+  console.info('Initialized interactors.')
+
   require('./controllers')({
     client,
     // inject whatever you want here. services maybe?
     ...services,
+    ...interactors,
+    ...repos,
   })
   console.info('Initialized controllers.')
 }
