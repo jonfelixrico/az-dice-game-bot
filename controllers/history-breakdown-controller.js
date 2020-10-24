@@ -145,7 +145,7 @@ class HistoryBreakdownController {
     return _.chain(matching)
       .map((member) => ({
         id: member.user.id,
-        name: member.nickname || user.username,
+        name: member.nickname || member.user.username,
       }))
       .sortBy('name')
       .value()
