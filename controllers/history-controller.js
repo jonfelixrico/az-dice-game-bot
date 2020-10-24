@@ -86,30 +86,6 @@ class HistoryController {
     return momentDt.format('MMM D, YYYY h:mm:ss A')
   }
 
-  _generateTallyResponse(channelId, tally, total) {
-    const responseStrBuff = [
-      `Here is the rank tally for <#${channelId}> as of ${this.formatDate(
-        new Date(),
-        true
-      )}`,
-    ]
-
-    const formattedTally = tally
-      .filter(({ rank }) => !!rank)
-      .map(({ count, rank, subrank }) => ({
-        label: this.rollEval.getEvalLabel({ rank, subrank }),
-        count,
-      }))
-
-    for (const { label, count } of formattedTally) {
-      responseStrBuff.push(`**${label}:** ${count}`)
-    }
-
-    responseStrBuff.push(`**Total rolls made:** ${total}`)
-
-    return responseStrBuff.join('\n')
-  }
-
   async handleClear(message) {
     const channelId = message.channel.id
     this.executor.queueJob(async () => {
@@ -136,26 +112,11 @@ class HistoryController {
     }, channelId)
   }
 
-  async handleTally(message) {
-    const channelId = message.channel.id
-    await this.executor.queueJob(async () => {
-      const tally = await this.hist.countPerRank(channelId)
-      const total = await this.hist.getRollCount(channelId)
-      await message.channel.send(
-        this._generateTallyResponse(channelId, tally, total)
-      )
-    }, channelId)
-  }
-
   initListeners() {
     const { messageSvc } = this
 
     messageSvc.onCommand(HistoryCommands.HIGHEST, this.handleHighest.bind(this))
-
     messageSvc.onCommand(HistoryCommands.LAST_ROLL, this.handleLast.bind(this))
-
-    messageSvc.onCommand(HistoryCommands.TALLY, this.handleTally.bind(this))
-
     messageSvc.onCommand(HistoryCommands.CLEAR, this.handleClear.bind(this))
   }
 }
