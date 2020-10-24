@@ -73,7 +73,7 @@ class HistoryInteractor {
     return _.chain(history)
       .groupBy('userId')
       .mapValues((rolls) => {
-        return _.chain(rolls)
+        const winnings = _.chain(rolls)
           .countBy(({ rank, subrank }) => JSON.stringify([rank, subrank]))
           .entries()
           .sort((a, b) => b[1] - a[1])
@@ -85,9 +85,15 @@ class HistoryInteractor {
               subrank,
             }
           })
+          .value()
+
+        const rollCount = winnings.reduce((acc, { count }) => acc + count, 0)
+
+        return {
+          winnings,
+          rollCount,
+        }
       })
-      .entries()
-      .map(([userId, winnings]) => ({ userId, winnings }))
       .value()
   }
 
