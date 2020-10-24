@@ -19,26 +19,33 @@ class HistoryTallyController {
 
   _generateTableData(tally) {
     const { rollEval } = this
+
+    // create a map for the prize tiers
     const tierMap = _.chain(rollEval.getRankList())
       .keyBy(({ rank, subrank }) => [rank || 0, subrank || 0].join('/'))
       .value()
 
+    // we'll also throw in the prize-less tiers
     tierMap['0/0'] = { label: 'No Prize' }
 
+    // set the count of the values in tierMap by using the values from `tally`
     tally.forEach(({ rank, subrank, count }) => {
       const key = [rank || 0, subrank || 0].join('/')
       const tier = tierMap[key]
       tier.count = count
     })
 
-    // sorts ranked rolls from highest to lowest
+    /*
+     * sorts ranked rolls from highest to lowest. we cant include no-prize rolls
+     * in this because compareEvals will break
+     */
     const sortedTally = _.chain(tierMap)
       .values()
       .filter(({ rank }) => !!rank)
       .sort((a, b) => rollEval.compareEvals(b, a))
       .value()
 
-    // push unranked rolls as the lowest
+    // finally, include the no-prize rolls as dead last
     sortedTally.push(tierMap['0/0'])
 
     const totalRollsMade = sortedTally.reduce(
@@ -48,6 +55,7 @@ class HistoryTallyController {
 
     const formattedForTable = sortedTally.map(({ label, count }) => [
       label,
+      // the count of the others may be undefined, so we'll transfrom them to 0
       count || 0,
     ])
 
