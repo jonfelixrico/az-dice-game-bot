@@ -66,29 +66,18 @@ class HistoryTallyController {
     ]
   }
 
-  _generateTallyResponse(channelId, tally) {
+  _generateTallyResponse(tally) {
     // generate the ascii table for the tally and enclose it within a markdown code block
-    const tabularData = [
-      '```',
-      table(this._generateTableData(tally)),
-      '```',
-    ].join('\n')
-
-    return new MessageEmbed({
-      title: 'Prize Tally',
-      timestamp: moment().toDate(),
-      description: [
-        `This is the tally of rolls for channel <#${channelId}>`,
-        tabularData,
-      ].join('\n'),
-    })
+    return ['```', table(this._generateTableData(tally)), '```'].join('\n')
   }
 
   async handler(message) {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
+      const msg = await message.channel.send('Loading tally...')
+
       const tally = await this.hist.countPerRank(channelId)
-      await message.channel.send(this._generateTallyResponse(channelId, tally))
+      await msg.edit(this._generateTallyResponse(tally))
     }, channelId)
   }
 }

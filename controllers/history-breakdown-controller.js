@@ -93,7 +93,7 @@ class HistoryBreakdownController {
 
       return {
         count,
-        percentage: _.round(count / totalRolls, 2) * 100,
+        percentage: !count ? 0 : _.round(count / totalRolls, 2) * 100,
       }
     })
 
@@ -155,10 +155,6 @@ class HistoryBreakdownController {
     const channelId = message.channel.id
     const byUser = await this.hist.ranksPerUser(channelId)
     const byRank = await this.hist.countPerRank(channelId)
-
-    if (_.isEmpty(byUser)) {
-      return sprintf('There are currently no rolls found in <#%s>.', channelId)
-    }
 
     const sequence = this._generateUserSequence(message.guild, byUser)
     const tableData = this._generateTableData(sequence, byUser, byRank)
