@@ -1,8 +1,6 @@
 const { MessageEmbed } = require('discord.js')
 const { diceRollToString } = require('./utils')
 
-const BLANK_SPACE = '\u200B'
-
 class VoidController {
   constructor({ RollInteractor, MessageService, RollEvalService }) {
     this.roll = RollInteractor
@@ -12,7 +10,6 @@ class VoidController {
   }
 
   generateResponseEmbed({ voidedRoll, lastRoll, highestRoll }) {
-    console.debug(voidedRoll, lastRoll, highestRoll)
     const embed = new MessageEmbed({
       title: 'Last Roll Voided',
 
