@@ -86,7 +86,7 @@ class HistoryController {
     return momentDt.format('MMM D, YYYY h:mm:ss A')
   }
 
-  generateTallyResponse(channelId, tally) {
+  _generateTallyResponse(channelId, tally, total) {
     const responseStrBuff = [
       `Here is the rank tally for <#${channelId}> as of ${this.formatDate(
         new Date(),
@@ -104,6 +104,8 @@ class HistoryController {
     for (const { label, count } of formattedTally) {
       responseStrBuff.push(`**${label}:** ${count}`)
     }
+
+    responseStrBuff.push(`**Total rolls made:** ${total}`)
 
     return responseStrBuff.join('\n')
   }
@@ -138,7 +140,10 @@ class HistoryController {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
       const tally = await this.hist.countPerRank(channelId)
-      await message.channel.send(this.generateTallyResponse(channelId, tally))
+      const total = await this.hist.getRollCount(channelId)
+      await message.channel.send(
+        this._generateTallyResponse(channelId, tally, total)
+      )
     }, channelId)
   }
 
