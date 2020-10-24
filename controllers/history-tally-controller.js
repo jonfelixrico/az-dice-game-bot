@@ -1,4 +1,7 @@
 const moment = require('moment-timezone')
+const { table } = require('table')
+const { MessageEmbed } = require('discord.js')
+const _ = require('lodash')
 
 class HistoryTallyController {
   constructor({
@@ -8,54 +11,76 @@ class HistoryTallyController {
     HistoryInteractor,
   }) {
     this.executor = ExecutorService
-    this.eval = RollEvalService
+    this.rollEval = RollEvalService
     this.hist = HistoryInteractor
 
     MessageService.onCommand('!history tally', this.handler.bind(this))
   }
 
-  formatDate(date, forceAbsoluteDate) {
-    const momentDt = moment(date)
+  _generateTableData(tally) {
+    const { rollEval } = this
+    const tierMap = _.chain(rollEval.getRankList())
+      .keyBy(({ rank, subrank }) => [rank || 0, subrank || 0].join('/'))
+      .value()
 
-    if (!forceAbsoluteDate && momentDt.isSame(new Date(), 'day')) {
-      return `today, ${momentDt.format('h:mm:ss A')}`
-    }
+    tierMap['0/0'] = { label: 'No Prize' }
 
-    return momentDt.format('MMM D, YYYY h:mm:ss A')
+    tally.forEach(({ rank, subrank, count }) => {
+      const key = [rank || 0, subrank || 0].join('/')
+      const tier = tierMap[key]
+      tier.count = count
+    })
+
+    // sorts ranked rolls from highest to lowest
+    const sortedTally = _.chain(tierMap)
+      .values()
+      .filter(({ rank }) => !!rank)
+      .sort((a, b) => rollEval.compareEvals(b, a))
+      .value()
+
+    // push unranked rolls as the lowest
+    sortedTally.push(tierMap['0/0'])
+
+    const totalRollsMade = sortedTally.reduce(
+      (acc, { count }) => acc + (count || 0),
+      0
+    )
+
+    const formattedForTable = sortedTally.map(({ label, count }) => [
+      label,
+      count || 0,
+    ])
+
+    return [
+      ['Prize Tier', 'Count'],
+      ...formattedForTable,
+      ['Total rolls made', totalRollsMade],
+    ]
   }
 
-  _generateTallyResponse(channelId, tally, total) {
-    const responseStrBuff = [
-      `Here is the rank tally for <#${channelId}> as of ${this.formatDate(
-        new Date(),
-        true
-      )}`,
-    ]
+  _generateTallyResponse(channelId, tally) {
+    // generate the ascii table for the tally and enclose it within a markdown code block
+    const tabularData = [
+      '```',
+      table(this._generateTableData(tally)),
+      '```',
+    ].join('\n')
 
-    const formattedTally = tally
-      .filter(({ rank }) => !!rank)
-      .map(({ count, rank, subrank }) => ({
-        label: this.eval.getEvalLabel({ rank, subrank }),
-        count,
-      }))
-
-    for (const { label, count } of formattedTally) {
-      responseStrBuff.push(`**${label}:** ${count}`)
-    }
-
-    responseStrBuff.push(`**Total rolls made:** ${total}`)
-
-    return responseStrBuff.join('\n')
+    return new MessageEmbed({
+      title: 'Prize Tally',
+      timestamp: moment().toDate(),
+      description: [
+        `This is the tally of rolls for channel <#${channelId}>`,
+        tabularData,
+      ].join('\n'),
+    })
   }
 
   async handler(message) {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
       const tally = await this.hist.countPerRank(channelId)
-      const total = await this.hist.getRollCount(channelId)
-      await message.channel.send(
-        this._generateTallyResponse(channelId, tally, total)
-      )
+      await message.channel.send(this._generateTallyResponse(channelId, tally))
     }, channelId)
   }
 }
