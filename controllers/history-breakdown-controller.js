@@ -107,8 +107,7 @@ class HistoryBreakdownController {
 
   _generateTableData(userIdSequence, byUser, byRank) {
     const headers = [
-      'Row no.',
-      'Name',
+      'User',
       ...this._rankCols.map(({ label }) => label),
       'Total',
     ]
@@ -122,12 +121,11 @@ class HistoryBreakdownController {
           : sprintf('%d (%.2f%%)', count, percentage)
       )
 
-      return [index + 1, name, ...formattedData]
+      return [name, ...formattedData]
     })
 
     const footer = [
-      '',
-      '',
+      'All Users',
       ...this._generateFooterData(byRank).map(({ count, percentage }) =>
         percentage === undefined
           ? count
@@ -167,7 +165,7 @@ class HistoryBreakdownController {
 
     const tableText = [
       '```',
-      table(tableData, { columnDefault: { wrapWord: true, width: 7 } }),
+      table(tableData, { columnDefault: { wrapWord: true, width: 8 } }),
       '```',
     ].join('\n')
 
