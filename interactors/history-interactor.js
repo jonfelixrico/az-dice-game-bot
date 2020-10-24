@@ -43,8 +43,8 @@ class HistoryInteractor {
   async countPerRank(channelId) {
     const grouped = await this._groupByWinnings(channelId)
     return grouped.map(({ rank, subrank, rolls }) => ({
-      rank,
-      subrank,
+      rank: rank || 0,
+      subrank: subrank || 0,
       count: rolls.length,
     }))
   }
@@ -81,8 +81,8 @@ class HistoryInteractor {
             const [rank, subrank] = JSON.parse(tierStr)
             return {
               count,
-              rank,
-              subrank,
+              rank: rank || 0,
+              subrank: subrank || 0,
             }
           })
           .value()

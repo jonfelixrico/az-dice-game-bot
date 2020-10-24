@@ -50,14 +50,14 @@ class HistoryBreakdownController {
 
   _generateRowData({ winnings, rollCount }) {
     const indexedWinnings = _.chain(winnings)
-      .keyBy(({ rank, subrank }) => [rank || 0, subrank || 0].join('/'))
+      .keyBy(({ rank, subrank }) => [rank, subrank].join('/'))
       .mapValues(({ count }) => ({
         count,
         percentage: _.round(count / rollCount, 2) * 100,
       }))
       .value()
 
-    const rowData = this._rankCols.map(({ rank, subrank, label }) => {
+    const rowData = this._rankCols.map(({ rank, subrank }) => {
       const key = [rank, subrank].join('/')
       const rollsForRank = indexedWinnings[key]
 
@@ -71,15 +71,41 @@ class HistoryBreakdownController {
       return rollsForRank
     })
 
-    rowData.push({
-      count: rollCount,
-      percentage: 100,
-    })
-
-    return rowData
+    return [
+      ...rowData,
+      {
+        count: rollCount,
+      },
+    ]
   }
 
-  _generateTableData(userIdSequence, data) {
+  _generateFooterData(byRank) {
+    const indexedByRank = _.chain(byRank)
+      .keyBy(({ rank, subrank }) => [rank, subrank].join('/'))
+      .mapValues(({ count }) => count)
+      .value()
+
+    const totalRolls = _.chain(indexedByRank).values().sum().value()
+
+    const rankData = this._rankCols.map(({ rank, subrank }) => {
+      const key = [rank, subrank].join('/')
+      const count = indexedByRank[key] || 0
+
+      return {
+        count,
+        percentage: _.round(count / totalRolls, 2) * 100,
+      }
+    })
+
+    return [
+      ...rankData,
+      {
+        count: totalRolls,
+      },
+    ]
+  }
+
+  _generateTableData(userIdSequence, byUser, byRank) {
     const headers = [
       'Row no.',
       'Name',
@@ -88,16 +114,28 @@ class HistoryBreakdownController {
     ]
 
     const body = userIdSequence.map(({ id, name }, index) => {
-      const userRowData = this._generateRowData(data[id])
+      const userRowData = this._generateRowData(byUser[id])
 
       const formattedData = userRowData.map(({ count, percentage }) =>
-        sprintf('%d (%.2f%%)', count, percentage)
+        percentage === undefined
+          ? count
+          : sprintf('%d (%.2f%%)', count, percentage)
       )
 
       return [index + 1, name, ...formattedData]
     })
 
-    return [headers, ...body]
+    const footer = [
+      '',
+      '',
+      ...this._generateFooterData(byRank).map(({ count, percentage }) =>
+        percentage === undefined
+          ? count
+          : sprintf('%d (%.2f%%)', count, percentage)
+      ),
+    ]
+
+    return [headers, ...body, footer]
   }
 
   _generateUserSequence(guild, data) {
@@ -117,14 +155,15 @@ class HistoryBreakdownController {
 
   async _generateResponse(message) {
     const channelId = message.channel.id
-    const data = await this.hist.ranksPerUser(channelId)
+    const byUser = await this.hist.ranksPerUser(channelId)
+    const byRank = await this.hist.countPerRank(channelId)
 
-    if (_.isEmpty(data)) {
+    if (_.isEmpty(byUser)) {
       return sprintf('There are currently no rolls found in <#%s>.', channelId)
     }
 
-    const sequence = this._generateUserSequence(message.guild, data)
-    const tableData = this._generateTableData(sequence, data)
+    const sequence = this._generateUserSequence(message.guild, byUser)
+    const tableData = this._generateTableData(sequence, byUser, byRank)
 
     const tableText = [
       '```',
