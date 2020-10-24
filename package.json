@@ -18,6 +18,7 @@
     "moment-timezone": "^0.5.31",
     "node-gyp": "^7.1.0",
     "rxjs": "^6.6.3",
+    "sprintf-js": "^1.1.2",
     "uuid": "^8.3.1"
   },
   "devDependencies": {
