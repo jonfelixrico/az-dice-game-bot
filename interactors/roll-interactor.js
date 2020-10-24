@@ -61,7 +61,8 @@ class RollInteractor {
       return null
     }
 
-    const wasVoidedAlsoHighest = voidedRoll.uuid === highestRoll.uuid
+    const wasVoidedAlsoHighest =
+      highestRoll && voidedRoll.uuid === highestRoll.uuid
     if (wasVoidedAlsoHighest) {
       await highestCache.voidHighestRoll(channelId)
     }
