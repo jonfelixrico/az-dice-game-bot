@@ -1,6 +1,6 @@
 [
   {
-    "name": "Chiong Guan",
+    "name": "Chiong Guan (Tier 3)",
     "rank": 6,
     "subrank": 3,
     "desc": "6 same numbers",
@@ -33,7 +33,7 @@
     ]
   },
   {
-    "name": "Chiong Guan",
+    "name": "Chiong Guan (Tier 2)",
     "rank": 6,
     "subrank": 2,
     "desc": "5 same numbers",
@@ -62,7 +62,7 @@
     ]
   },
   {
-    "name": "Chiong Guan",
+    "name": "Chiong Guan (Tier 1)",
     "rank": 6,
     "subrank": 1,
     "desc": "Four 4s",
