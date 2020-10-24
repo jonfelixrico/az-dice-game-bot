@@ -1,10 +1,7 @@
-class MockRollHistoryRepo {
-  historyPerChannel = {}
-  idSeq = 1
+const { v4: uuid } = require('uuid')
 
-  constructor(injected) {
-    this.injected = injected
-  }
+class RollRepository {
+  historyPerChannel = {}
 
   /**
    * Pushes a roll the user made to the history.
@@ -17,7 +14,7 @@ class MockRollHistoryRepo {
     }
 
     const roll = {
-      id: this.idSeq++,
+      uuid: uuid(),
 
       userId,
       channelId,
@@ -33,11 +30,20 @@ class MockRollHistoryRepo {
     return roll
   }
 
+  getLastRoll(channelId) {
+    const history = this.getRollHistory(channelId)
+    return history[history.length - 1]
+  }
+
+  voidLastRoll(channelId) {
+    return this.getRollHistory(channelId).pop()
+  }
+
   /**
    * Clears the roll history of the specified channel.
    * @param {String} channelId
    */
-  clearChannelRollHistory(channelId) {
+  clearRollHistory(channelId) {
     this.historyPerChannel[channelId] = []
   }
 
@@ -45,10 +51,10 @@ class MockRollHistoryRepo {
    * Gets the roll history of the specified channel.
    * @param {String} channelId
    */
-  getChannelRollHistory(channelId) {
+  getRollHistory(channelId) {
     const historyArr = this.historyPerChannel[channelId]
     return historyArr || []
   }
 }
 
-module.exports = (injected) => new MockRollHistoryRepo(injected)
+module.exports = () => new RollRepository()

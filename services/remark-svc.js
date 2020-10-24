@@ -2,7 +2,7 @@ const RemarkType = require('../enums/remark-type')
 
 const gifRepliesContent = require('../data/gif-reply.json')
 const textRepliesContent = require('../data/text-reply.json')
-const random = require('lodash.random')
+const random = require('lodash/random')
 
 class RemarkSvc {
   // just in case you have some dependencies
@@ -25,19 +25,17 @@ class RemarkSvc {
     // Fetch a random mode between 1 = GIF_URL, 2 = STRING
     const mode = random(1, 2)
     const remark = { type: null, content: null }
-    
+
     let replies = []
-    
+
     if (mode == 1) {
       // show a gif to the user
-      remark.type = RemarkType.GIF_URL,
-      replies = gifRepliesContent[rank]
-    } 
-    
+      ;(remark.type = RemarkType.GIF_URL), (replies = gifRepliesContent[rank])
+    }
+
     if (mode == 2) {
       // send a text to the user
-      remark.type = RemarkType.STRING,
-      replies = textRepliesContent[rank]
+      ;(remark.type = RemarkType.STRING), (replies = textRepliesContent[rank])
     }
 
     if (!replies) {

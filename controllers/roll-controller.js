@@ -9,35 +9,53 @@ const RollCommands = {
 
 class RollController {
   constructor({
-    rollInteractor,
-    rollEvalSvc,
-    messageSvc,
-    executorSvc,
-    remarkSvc,
+    RollEvalService,
+    MessageService,
+    ExecutorService,
+    RemarkService,
+    RollInteractor,
+    HistoryInteractor,
   }) {
-    this.interactor = rollInteractor
-    this.rollEval = rollEvalSvc
-    this.messageSvc = messageSvc
-    this.executor = executorSvc
-    this.remarkSvc = remarkSvc
+    this.rollEval = RollEvalService
+    this.messageSvc = MessageService
+    this.executor = ExecutorService
+    this.remarkSvc = RemarkService
+
+    this.interactor = RollInteractor
+    this.hist = HistoryInteractor
 
     this.initListeners()
   }
 
   async generateResponse(rollData) {
-    const { isNewHighest, rolled, userId, channelId, rank, subrank } = rollData
+    const {
+      isNewHighest,
+      rolled,
+      userId,
+      channelId,
+      rank,
+      subrank,
+      hasPrize,
+    } = rollData
+
+    const label = hasPrize && this.rollEval.getEvalLabel({ rank, subrank })
 
     const embed = new MessageEmbed()
 
-    if (rank) {
-      embed.setTitle(this.rollEval.getEvalLabel({ rank, subrank }))
+    if (hasPrize) {
+      embed.setTitle(label)
     }
 
     const descStrBuffer = [`<@${userId}> rolled ${diceRollToString(rolled)}`]
-    if (rank && isNewHighest) {
+    if (hasPrize && isNewHighest) {
       descStrBuffer.push(`This is now the new highest roll in <#${channelId}>.`)
-    } else if (!rank) {
+    } else if (!hasPrize) {
       descStrBuffer.push('This roll does not match any prize combinations.')
+    }
+
+    if (hasPrize) {
+      const count = await this.hist.rankRollCount(channelId, rank, subrank)
+      descStrBuffer.push(`_${label} has been rolled ${count} time(s)._`)
     }
 
     embed.setDescription(descStrBuffer.join('\n'))
@@ -88,7 +106,7 @@ class RollController {
        * to roll again. A reaction will be made to tell them that their
        * roll was prevented.
        */
-      if (await interactor.didUserDoLastRollInChannel(channel.id, author.id)) {
+      if (await interactor.didUserDoLastRoll(channel.id, author.id)) {
         executor.queueJob(async () => await message.react('🛑'), channel.id)
         return
       }

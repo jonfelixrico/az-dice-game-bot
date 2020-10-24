@@ -12,11 +12,19 @@ const HistoryCommands = {
 const BLANK_SPACE = '\u200B'
 
 class HistoryController {
-  constructor({ rollInteractor, executorSvc, rollEvalSvc, messageSvc }) {
-    this.interactor = rollInteractor
-    this.executor = executorSvc
-    this.rollEval = rollEvalSvc
-    this.messageSvc = messageSvc
+  constructor({
+    ExecutorService,
+    RollEvalService,
+    MessageService,
+    RollInteractor,
+    HistoryInteractor,
+  }) {
+    this.executor = ExecutorService
+    this.rollEval = RollEvalService
+    this.messageSvc = MessageService
+
+    this.hist = HistoryInteractor
+    this.interactor = RollInteractor
 
     this.initListeners()
   }
@@ -78,25 +86,10 @@ class HistoryController {
     return momentDt.format('MMM D, YYYY h:mm:ss A')
   }
 
-  generateTallyResponse(channelId, tally) {
-    const responseStrBuff = [
-      `Here is the rank tally for <#${channelId}> as of ${this.formatDate(
-        new Date(),
-        true
-      )}`,
-    ]
-
-    for (const { label, count } of tally) {
-      responseStrBuff.push(`**${label}:** ${count}`)
-    }
-
-    return responseStrBuff.join('\n')
-  }
-
   async handleClear(message) {
     const channelId = message.channel.id
     this.executor.queueJob(async () => {
-      await this.interactor.clearChannelHistory(channelId)
+      await this.hist.clearHistory(channelId)
       await message.channel.send(
         `${message.author} has cleared the history for channel ${message.channel}.`
       )
@@ -106,7 +99,7 @@ class HistoryController {
   async handleLast(message) {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
-      const roll = await this.interactor.getChannelLastRoll(channelId)
+      const roll = await this.hist.getLastRoll(channelId)
       await message.channel.send(this.generateLastRollResponse(roll))
     }, channelId)
   }
@@ -114,16 +107,8 @@ class HistoryController {
   async handleHighest(message) {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
-      const roll = await this.interactor.getChannelHighestRoll(channelId)
+      const roll = await this.hist.getHighestRoll(channelId)
       await message.channel.send(this.generateHighestRollReponse(roll))
-    }, channelId)
-  }
-
-  async handleTally(message) {
-    const channelId = message.channel.id
-    await this.executor.queueJob(async () => {
-      const tally = await this.interactor.getChannelTallyByRank(channelId)
-      await message.channel.send(this.generateTallyResponse(channelId, tally))
     }, channelId)
   }
 
@@ -131,11 +116,7 @@ class HistoryController {
     const { messageSvc } = this
 
     messageSvc.onCommand(HistoryCommands.HIGHEST, this.handleHighest.bind(this))
-
     messageSvc.onCommand(HistoryCommands.LAST_ROLL, this.handleLast.bind(this))
-
-    messageSvc.onCommand(HistoryCommands.TALLY, this.handleTally.bind(this))
-
     messageSvc.onCommand(HistoryCommands.CLEAR, this.handleClear.bind(this))
   }
 }
