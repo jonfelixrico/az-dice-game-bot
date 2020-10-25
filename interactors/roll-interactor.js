@@ -29,27 +29,34 @@ class RollInteractor {
       subrank,
     })
 
-    const isNewHighest = rank && (await this._evaluateIfNewHighest(newRoll))
+    const highestEvalResults = rank
+      ? await this._evaluateAgainstHighest(newRoll)
+      : {}
 
     return {
       ...newRoll,
-      isNewHighest,
+      ...highestEvalResults,
       hasPrize: !!rank,
     }
   }
 
-  async _evaluateIfNewHighest(roll) {
+  async _evaluateAgainstHighest(roll) {
     const { highestCache, evalSvc } = this
     const { channelId } = roll
 
-    const highest = await this.highestCache.getHighestRoll(channelId)
+    const currentHighest = await highestCache.getHighestRoll(channelId)
 
-    if (!highest || evalSvc.compareEvals(roll, highest) === 1) {
+    if (!currentHighest || evalSvc.compareEvals(roll, currentHighest) === 1) {
       await highestCache.setHighestRoll(roll)
-      return true
+
+      return {
+        isNewHighest: true,
+        prevHolder: currentHighest && currentHighest.userId,
+        isPrevHolder: currentHighest && currentHighest.userId === roll.userId,
+      }
     }
 
-    return false
+    return {}
   }
 
   async voidLastRoll(channelId) {
