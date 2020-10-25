@@ -7,11 +7,13 @@ class VoidController {
     MessageService,
     RollEvalService,
     ControllerHelperService,
+    ExecutorService,
   }) {
     this.roll = RollInteractor
     this.msg = MessageService
     this.eval = RollEvalService
     this.helper = ControllerHelperService
+    this.exec = ExecutorService
     this.initListeners()
   }
 
@@ -52,7 +54,17 @@ class VoidController {
   }
 
   initListeners() {
-    this.msg.onCommand('!void', this.handler.bind(this))
+    this.msg.onCommand('!void', async (message) => {
+      await this.exec.queueJob(async () => {
+        try {
+          await this.handler(message)
+        } catch (e) {
+          await message.reply(
+            'something went wrong while attempting to void the last roll. Please try again later.'
+          )
+        }
+      }, message.channel.id)
+    })
   }
 }
 
