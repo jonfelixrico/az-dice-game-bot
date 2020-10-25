@@ -1,7 +1,6 @@
 const { diceRollToString } = require('./utils')
 const { MessageEmbed } = require('discord.js')
 const RemarkType = require('../enums/remark-type')
-const { BLANK_SPACE } = require('../enums/string-constants')
 
 const RollCommands = {
   FORCED: '!roll force',
