@@ -128,11 +128,18 @@ class HistoryTallyController {
     const channelId = message.channel.id
     await this.executor.queueJob(async () => {
       const reply = await message.channel.send('Loading roll breakdown...')
-      const embed = await this._generateEmbedResponse(message)
-      await reply.edit({
-        content: '**Tally of Ranks**',
-        embed,
-      })
+      try {
+        const embed = await this._generateEmbedResponse(message)
+        await reply.edit({
+          content: '**Tally of Ranks**',
+          embed,
+        })
+      } catch (e) {
+        console.error(e)
+        await reply.edit(
+          `${message.author}, something went wrong while processing your request. Please try again later.`
+        )
+      }
     }, channelId)
   }
 }
