@@ -1,6 +1,7 @@
 const { diceRollToString } = require('./utils')
 const { MessageEmbed } = require('discord.js')
 const RemarkType = require('../enums/remark-type')
+const { BLANK_SPACE } = require('../enums/string-constants')
 
 const RollCommands = {
   FORCED: '!roll force',
@@ -30,6 +31,8 @@ class RollController {
   async generateResponse(rollData) {
     const {
       isNewHighest,
+      prevHolder,
+      isPrevHolder,
       rolled,
       userId,
       channelId,
@@ -38,27 +41,46 @@ class RollController {
       hasPrize,
     } = rollData
 
-    const label = hasPrize && this.rollEval.getEvalLabel({ rank, subrank })
-
     const embed = new MessageEmbed()
 
-    if (hasPrize) {
-      embed.setTitle(label)
-    }
+    const label = hasPrize && this.rollEval.getEvalLabel({ rank, subrank })
+    const userMention = `<@${userId}>`
+    const channelMention = `<#${channelId}>`
 
-    const descStrBuffer = [`<@${userId}> rolled ${diceRollToString(rolled)}`]
-    if (hasPrize && isNewHighest) {
-      descStrBuffer.push(`This is now the new highest roll in <#${channelId}>.`)
-    } else if (!hasPrize) {
-      descStrBuffer.push('This roll does not match any prize combinations.')
-    }
+    const descBuffer = []
 
     if (hasPrize) {
       const count = await this.hist.rankRollCount(channelId, rank, subrank)
-      descStrBuffer.push(`_${label} has been rolled ${count} time(s)._`)
+      const prizeBuffer = [`${userMention} rolled **${label}**!`]
+
+      if (count === 1) {
+        prizeBuffer.push('**They are the first one to roll this combination.**')
+      } else {
+        prizeBuffer.push(`This combination has been rolled **${count}** times.`)
+      }
+
+      descBuffer.push(prizeBuffer.join(' '))
+    } else {
+      descBuffer.push(`${userMention} didn't roll a winning combination.`)
     }
 
-    embed.setDescription(descStrBuffer.join('\n'))
+    if (isNewHighest && isPrevHolder) {
+      descBuffer.push(
+        `They retain their position as the holder of the highest roll in ${channelMention}.`
+      )
+    } else if (isNewHighest && prevHolder) {
+      descBuffer.push(
+        `They now overtake <@${prevHolder}> as the user with the highest roll in ${channelMention}!`
+      )
+    } else if (isNewHighest && !prevHolder) {
+      descBuffer.push(
+        `They are now the holder of the highest roll in ${channelMention}!`
+      )
+    }
+
+    const descStr = descBuffer.join('\n\n')
+
+    embed.setDescription(descStr)
 
     const remark = await this.remarkSvc.getRemark(rollData)
 
@@ -74,7 +96,10 @@ class RollController {
       }
     }
 
-    return embed
+    return {
+      content: diceRollToString(rolled),
+      embed,
+    }
   }
 
   doRoll(message) {
