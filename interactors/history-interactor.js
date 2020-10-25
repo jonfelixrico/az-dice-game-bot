@@ -21,7 +21,12 @@ class HistoryInteractor {
   }
 
   async getHighestRoll(channelId) {
-    return await this.highest.getHighestRoll(channelId)
+    const roll = await this.highest.getHighestRoll(channelId)
+    if (!roll || !roll.rank) {
+      return null
+    }
+
+    return roll
   }
 
   async usersPerRank(channelId) {

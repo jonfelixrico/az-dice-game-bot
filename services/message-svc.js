@@ -1,7 +1,32 @@
 const { fromEvent } = require('rxjs')
 const { filter, groupBy, mergeMap, debounceTime } = require('rxjs/operators')
+
+const { MODE, CHANNELS } = process.env
+
+const isWhitelist = MODE.toUpperCase() === 'WHITELIST'
+const channels = new Set(
+  (CHANNELS || '')
+    .split(',')
+    .map((str) => str.trim())
+    .filter((str) => !!str)
+)
+
 module.exports = ({ client }) => {
+  console.warn(
+    `The bot will ${
+      isWhitelist ? 'only' : 'not'
+    } consume messages from the following channels:`
+  )
+  channels.forEach((name) => console.warn(name))
+  console.warn('End of list.')
+
   const messageEvent = fromEvent(client, 'message')
+
+  function channelFilter({ channel }) {
+    return isWhitelist
+      ? channels.has(channel.name)
+      : !channels.has(channel.name)
+  }
 
   /**
    * Similar to client.on('message' () => { // insert logic here }), but with extra
@@ -17,6 +42,7 @@ module.exports = ({ client }) => {
   function onCommand(command, callback, debouncePerUser = 750) {
     return messageEvent
       .pipe(
+        filter(channelFilter),
         filter(({ content }) => content === command),
         groupBy(({ channel, author }) =>
           [command, channel.id, author.id].join('/')

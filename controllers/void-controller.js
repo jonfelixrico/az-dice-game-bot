@@ -1,44 +1,32 @@
-const moment = require('moment-timezone')
-const { diceRollToString } = require('./utils')
+const { MessageEmbed } = require('discord.js')
+const { sprintf } = require('sprintf-js')
 
 class VoidController {
-  constructor({ RollInteractor, MessageService, RollEvalService }) {
+  constructor({
+    RollInteractor,
+    MessageService,
+    RollEvalService,
+    ControllerHelperService,
+    ExecutorService,
+  }) {
     this.roll = RollInteractor
     this.msg = MessageService
     this.eval = RollEvalService
+    this.helper = ControllerHelperService
+    this.exec = ExecutorService
     this.initListeners()
   }
 
-  _generateRollString({ rolled, rollDt, userId, rank, subrank }) {
-    const rollStr = diceRollToString(rolled)
-    const label = rank
-      ? `**${this.eval.getEvalLabel({ rank, subrank })}**`
-      : 'No matching prize.'
-
+  _generateResponse({ voidedRoll }, { author, channel }) {
     return [
-      rollStr,
-      [`<@${userId}>`, label, moment(rollDt).format('MMM D, h:mm:ss a')].join(
-        ' · '
-      ),
-    ]
-      .map((str) => `> ${str}`)
-      .join('\n')
-  }
-
-  _generateResponse({ voidedRoll }, author) {
-    return [
-      `The last roll has been voided by ${author}.`,
-      this._generateRollString(voidedRoll),
+      `The latest roll in ${channel} has been voided by ${author}.`,
+      this.helper.stringifyRoll(voidedRoll),
     ].join('\n\n')
   }
 
   async handler(message) {
-    const { member, channel } = message
-    const isSupervisor = !!member.roles.cache.find(
-      (role) => role.name === 'Dice Game Supervisor'
-    )
-
-    if (!isSupervisor) {
+    const { member, channel, author } = message
+    if (!this.helper.isSupervisor(member)) {
       message.react('❌')
       return
     }
@@ -46,15 +34,37 @@ class VoidController {
     const voided = await this.roll.voidLastRoll(channel.id)
 
     if (!voided) {
-      await channel.send('There are no remaining rolls in the channel.')
+      await channel.send(
+        new MessageEmbed({
+          description: sprintf(
+            '%s tried to use `!void` in %s whose roll history is empty.',
+            author,
+            channel
+          ),
+        })
+      )
       return
     }
 
-    await channel.send(this._generateResponse(voided, message.author))
+    await channel.send(
+      new MessageEmbed({
+        description: this._generateResponse(voided, message),
+      })
+    )
   }
 
   initListeners() {
-    this.msg.onCommand('!void', this.handler.bind(this))
+    this.msg.onCommand('!void', async (message) => {
+      await this.exec.queueJob(async () => {
+        try {
+          await this.handler(message)
+        } catch (e) {
+          await message.reply(
+            'something went wrong while attempting to void the last roll. Please try again later.'
+          )
+        }
+      }, message.channel.id)
+    })
   }
 }
 
