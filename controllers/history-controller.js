@@ -1,15 +1,10 @@
-const moment = require('moment-timezone')
-const { diceRollToString } = require('./utils')
 const { MessageEmbed } = require('discord.js')
 
 const HistoryCommands = {
   LAST_ROLL: '!history last',
   HIGHEST: '!history highest',
-  TALLY: '!history tally',
   CLEAR: '!history clear',
 }
-
-const BLANK_SPACE = '\u200B'
 
 class HistoryController {
   constructor({
@@ -18,6 +13,7 @@ class HistoryController {
     MessageService,
     RollInteractor,
     HistoryInteractor,
+    ControllerHelperService,
   }) {
     this.executor = ExecutorService
     this.rollEval = RollEvalService
@@ -25,74 +21,51 @@ class HistoryController {
 
     this.hist = HistoryInteractor
     this.interactor = RollInteractor
+    this.helper = ControllerHelperService
 
     this.initListeners()
   }
 
   generateLastRollResponse(roll) {
-    if (!roll) {
-      return 'There were no previous rolls found in this channel.'
-    }
-
-    const { userId, rollDt, rolled, channelId, rank, subrank } = roll
-
-    const embed = new MessageEmbed({
-      title: 'Last Roll',
-      description: `The last roll in <#${channelId}> was by <@${userId}>.`,
-      footer: 'Rolled at',
-      timestamp: moment(rollDt).toDate(),
+    return new MessageEmbed({
+      title: 'Latest Roll',
+      description: roll
+        ? this.helper.stringifyRoll(roll)
+        : 'There were no previous rolls found in this channel.',
     })
-
-    if (!rank) {
-      embed.addField(diceRollToString(rolled), BLANK_SPACE)
-    } else {
-      embed.addField(
-        this.rollEval.getEvalLabel({ rank, subrank }),
-        diceRollToString(rolled)
-      )
-    }
-
-    return embed
   }
 
   generateHighestRollReponse(roll) {
-    if (!roll || !roll.rank) {
-      return 'There were no highest rolls recorded for this channel.'
-    }
-
-    const { userId, rollDt, rolled, channelId, rank, subrank } = roll
-
     return new MessageEmbed({
       title: 'Highest Roll',
-      description: `The highest roll in <#${channelId}> was by <@${userId}>.`,
-      fields: [
-        {
-          name: this.rollEval.getEvalLabel({ rank, subrank }),
-          value: diceRollToString(rolled),
-        },
-      ],
-      footer: 'Rolled at',
-      timestamp: moment(rollDt).toDate(),
+      description: roll
+        ? this.helper.stringifyRoll(roll)
+        : 'There were no highest rolls recorded for this channel.',
     })
-  }
-
-  formatDate(date, forceAbsoluteDate) {
-    const momentDt = moment(date)
-
-    if (!forceAbsoluteDate && momentDt.isSame(new Date(), 'day')) {
-      return `today, ${momentDt.format('h:mm:ss A')}`
-    }
-
-    return momentDt.format('MMM D, YYYY h:mm:ss A')
   }
 
   async handleClear(message) {
     const channelId = message.channel.id
     this.executor.queueJob(async () => {
-      await this.hist.clearHistory(channelId)
-      await message.channel.send(
-        `${message.author} has cleared the history for channel ${message.channel}.`
-      )
+      if (!this.helper.isSupervisor(message.member)) {
+        message.react('❌')
+        return
+      }
+
+      try {
+        await this.hist.clearHistory(channelId)
+        await message.channel.send(
+          new MessageEmbed({
+            title: 'History Cleared',
+            description: `${message.author} has cleared the roll history for channel ${message.channel}.`,
+          })
+        )
+      } catch (e) {
+        console.error(e)
+        await message.reply(
+          'Something went wrong while attemtpting to clear the history. Please try again later.'
+        )
+      }
     }, channelId)
   }
 
