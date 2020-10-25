@@ -1,7 +1,6 @@
 const { MessageEmbed } = require('discord.js')
 const _ = require('lodash')
 const { sprintf } = require('sprintf-js')
-const { BLANK_SPACE } = require('../enums/string-constants')
 
 class HistoryTallyController {
   constructor({
