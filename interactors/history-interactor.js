@@ -24,48 +24,42 @@ class HistoryInteractor {
     return await this.highest.getHighestRoll(channelId)
   }
 
-  async _groupByWinnings(channelId) {
+  async usersPerRank(channelId) {
     const history = await this.rolls.getRollHistory(channelId)
-    return _.chain(history)
+    const ranks = _.chain(history)
       .groupBy(({ rank, subrank }) => JSON.stringify([rank, subrank]))
       .toPairs()
       .map(([tierStr, rolls]) => {
         const [rank, subrank] = JSON.parse(tierStr)
         return {
           rolls,
+          rank: rank || 0,
+          subrank: subrank || 0,
+        }
+      })
+      .map(({ rank, subrank, rolls }) => {
+        return {
           rank,
           subrank,
+          users: _.chain(rolls)
+            .countBy('userId')
+            .toPairs()
+            // desc
+            .sort((a, b) => b[1] - a[1])
+            .map(([userId, count]) => ({
+              userId,
+              count,
+            }))
+            .value(),
+          count: rolls.length,
         }
       })
       .value()
-  }
 
-  async countPerRank(channelId) {
-    const grouped = await this._groupByWinnings(channelId)
-    return grouped.map(({ rank, subrank, rolls }) => ({
-      rank: rank || 0,
-      subrank: subrank || 0,
-      count: rolls.length,
-    }))
-  }
-
-  async usersPerRank(channelId) {
-    const grouped = await this._groupByWinnings(channelId)
-    return grouped.map(({ rank, subrank, rolls }) => {
-      return {
-        rank,
-        subrank,
-        users: _.chain(rolls)
-          .countBy('userId')
-          .entries()
-          // desc
-          .sort((a, b) => b[1] - a[1])
-          .map(([userId, count]) => {
-            userId, count
-          })
-          .value(),
-      }
-    })
+    return {
+      ranks,
+      total: ranks.reduce((acc, { count }) => acc + count, 0),
+    }
   }
 
   async ranksPerUser(channelId) {
