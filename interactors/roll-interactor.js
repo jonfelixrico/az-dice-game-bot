@@ -69,7 +69,7 @@ class RollInteractor {
 
     return {
       voidedRoll,
-      wasVoidedAlsoHighest,
+      didHighestRollChange: wasVoidedAlsoHighest,
       lastRoll: await rollRepo.getLastRoll(channelId),
       highestRoll: await highestCache.getHighestRoll(channelId),
     }

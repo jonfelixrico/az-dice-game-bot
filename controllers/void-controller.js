@@ -1,4 +1,4 @@
-const { MessageEmbed } = require('discord.js')
+const moment = require('moment-timezone')
 const { diceRollToString } = require('./utils')
 
 class VoidController {
@@ -9,39 +9,27 @@ class VoidController {
     this.initListeners()
   }
 
-  generateResponseEmbed({ voidedRoll, lastRoll, highestRoll }) {
-    const embed = new MessageEmbed({
-      title: 'Last Roll Voided',
+  _generateRollString({ rolled, rollDt, userId, rank, subrank }) {
+    const rollStr = diceRollToString(rolled)
+    const label = rank
+      ? `**${this.eval.getEvalLabel({ rank, subrank })}**`
+      : 'No matching prize.'
 
-      fields: [
-        {
-          name: `Voided roll: ${diceRollToString(voidedRoll.rolled)} (${
-            voidedRoll.rank ? this.eval.getEvalLabel(voidedRoll) : 'no prize'
-          })`,
-          value: `<@${voidedRoll.userId}>`,
-        },
-      ],
-    })
+    return [
+      rollStr,
+      [`<@${userId}>`, label, moment(rollDt).format('MMM D, h:mm:ss a')].join(
+        ' · '
+      ),
+    ]
+      .map((str) => `> ${str}`)
+      .join('\n')
+  }
 
-    if (lastRoll) {
-      embed.addField(
-        `Restored last roll: ${diceRollToString(lastRoll.rolled)} (${
-          lastRoll.rank ? this.eval.getEvalLabel(lastRoll) : 'no prize'
-        })`,
-        `<@${lastRoll.userId}>`
-      )
-    }
-
-    if (highestRoll) {
-      embed.addField(
-        `Restored highest roll: ${diceRollToString(
-          highestRoll.rolled
-        )} (${this.eval.getEvalLabel(highestRoll)})`,
-        `<@${highestRoll.userId}>`
-      )
-    }
-
-    return embed
+  _generateResponse({ voidedRoll }, author) {
+    return [
+      `The last roll has been voided by ${author}.`,
+      this._generateRollString(voidedRoll),
+    ].join('\n\n')
   }
 
   async handler(message) {
@@ -62,7 +50,7 @@ class VoidController {
       return
     }
 
-    await channel.send(this.generateResponseEmbed(voided))
+    await channel.send(this._generateResponse(voided, message.author))
   }
 
   initListeners() {
